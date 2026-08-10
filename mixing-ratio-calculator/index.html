@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixing Ratio Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6D28D9;--pl:#EDE9FE;--pt:#26215C;
+  --o:#C2410C;--ol:#FFF7ED;--ot:#7C2D12;
+  --g:#15803D;--gl:#DCFCE7;--gt:#14532D;
+  --grad:linear-gradient(135deg,#6D28D9 0%,#9333EA 50%,#C2410C 100%);
+  --border:#E5E7EB;--bg:#F9FAFB;--card:#fff;--text:#111827;--muted:#6B7280;--hint:#9CA3AF;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#F3F4F6;color:var(--text);min-height:100vh;padding:2rem 1rem 5rem}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:1.5rem}
+
+/* TDS Upload */
+.tds-zone{border:1.5px dashed #C4B5FD;border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:1rem;background:var(--pl);display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;position:relative}
+.tds-zone:hover{border-color:var(--p);background:#E5D9FD}
+.tds-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.tds-icon{width:38px;height:38px;border-radius:9px;background:var(--p);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tds-text strong{display:block;font-size:13.5px;font-weight:600;color:var(--pt)}
+.tds-text span{font-size:12px;color:#7C3AED;opacity:.8}
+.tds-loading{display:none;align-items:center;gap:10px;padding:.9rem 1.25rem;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;margin-bottom:1rem;font-size:13px;color:var(--pt)}
+.tds-loading.on{display:flex}
+.spinner{width:16px;height:16px;border:2px solid #C4B5FD;border-top-color:var(--p);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tds-result{display:none;padding:.9rem 1.25rem;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;margin-bottom:1rem;font-size:13px;color:#065F46}
+.tds-result.on{display:block}
+.tds-result strong{display:block;margin-bottom:4px;font-size:13.5px}
+.tds-err{display:none;padding:.9rem 1.25rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;margin-bottom:1rem;font-size:13px;color:#DC2626}
+.tds-err.on{display:block}
+
+.modes{display:flex;gap:8px;margin-bottom:1.1rem}
+.mb{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);color:var(--muted);font-size:13.5px;font-weight:500;cursor:pointer;font-family:inherit;text-align:left;line-height:1.4;transition:all .13s}
+.mb .ms{display:block;font-size:11px;font-weight:400;opacity:.6;margin-top:2px}
+.mb.on{border-color:var(--p);background:var(--pl);color:var(--pt)}
+.mb:hover:not(.on){background:var(--bg);border-color:#C4B5FD}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:.8rem}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
+.lbl{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--hint)}
+.bdg{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px}
+.ba{background:var(--pl);color:var(--pt)}
+.bb{background:var(--gl);color:var(--gt)}
+.bc{background:var(--ol);color:var(--ot)}
+.gr{display:grid;gap:9px;align-items:end;margin-bottom:9px}
+.g2{grid-template-columns:1.5fr 1fr 1fr}
+.gtt{grid-template-columns:1.5fr 1fr 1fr 36px}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+input[type=text],input[type=number]{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;transition:border-color .12s,box-shadow .12s}
+input[type=text]::placeholder,input[type=number]::placeholder{color:#C0C0C0;font-style:italic}
+input:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.1)}
+input[readonly]{color:var(--hint);background:#F3F4F6}
+input.autofilled{border-color:#A7F3D0;background:#F0FDF4}
+select{padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;cursor:pointer}
+select:focus{border-color:var(--p)}
+.badd{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px dashed #C4B5FD;border-radius:8px;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:all .13s;margin-top:2px}
+.badd:hover{border-color:var(--p);color:var(--p);background:var(--pl)}
+.brm{width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s;flex-shrink:0;font-family:inherit;line-height:1;align-self:end}
+.brm:hover{background:#FEF2F2;border-color:#FCA5A5;color:#DC2626}
+.trow{display:flex;align-items:center;gap:10px;padding:.875rem 1.25rem;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:.8rem;flex-wrap:wrap}
+.trow>label{margin:0;font-size:14px;color:var(--text);white-space:nowrap;font-weight:500}
+.trow input{max-width:110px}
+.bcalc{width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em;color:#fff;background:var(--grad);transition:opacity .12s,transform .08s}
+.bcalc:hover{opacity:.9}
+.bcalc:active{transform:scale(.998)}
+.emsg{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:9px 13px;font-size:13px;color:#DC2626;margin-bottom:.8rem;display:none}
+.emsg.on{display:block}
+.rwrap{display:none;margin-top:1.25rem}
+.rwrap.on{display:block}
+.rcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:.8rem}
+.rl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);margin-bottom:5px}
+.rv{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:500;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.03em}
+.chips{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.chip{font-size:12px;padding:4px 11px;border-radius:100px;font-weight:500}
+.rnote{font-size:11px;color:var(--hint);margin-top:8px;font-style:italic}
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:.8rem}
+.tbl-hd{padding:.8rem 1.25rem;border-bottom:1px solid #F3F4F6}
+.tbl-hd span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--hint)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}
+thead th{padding:9px 1.1rem;text-align:right;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);background:var(--bg);border-bottom:1px solid #F3F4F6}
+thead th:first-child{text-align:left;width:32%}
+tbody td{padding:10px 1.1rem;border-bottom:1px solid #F9FAFB;color:var(--text);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td:first-child{text-align:left;font-weight:500}
+.mn{font-family:'JetBrains Mono',monospace;font-size:12.5px}
+.tr-total td{background:var(--bg);font-weight:600;border-bottom:none}
+.tr-subtotal td{background:#F5F3FF;font-weight:600;border-bottom:1px solid #DDD6FE;color:#4C1D95;font-size:12.5px}
+.indent{padding-left:1.4rem!important;font-weight:400!important}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.arow{display:flex;justify-content:flex-end;gap:8px;padding:.875rem 1.25rem;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:.8rem}
+.bsave,.bprint{padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .13s}
+.bsave:hover{border-color:var(--p);color:var(--pt);background:var(--pl)}
+.bprint:hover{background:var(--bg)}
+.hsec{margin-top:1.75rem;display:none}
+.hsec.on{display:block}
+.hhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.hhd h3{font-size:14px;font-weight:500;color:var(--muted)}
+.bclr{font-size:12px;color:var(--hint);background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 8px;border-radius:6px}
+.bclr:hover{color:#DC2626;background:#FEF2F2}
+.hi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.875rem 1.1rem;margin-bottom:7px}
+.hitp{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:6px}
+.hrat{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hmeta{font-size:11px;color:var(--hint)}
+.hdet{font-size:12px;color:var(--muted);line-height:1.6}
+@media(max-width:560px){.g2,.gtt{grid-template-columns:1fr 1fr}.modes{flex-direction:column}.rv{font-size:20px}}
+@media print{.bcalc,.badd,.brm,.arow,.modes,.hsec,.tds-zone,.tds-result,.tds-loading{display:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Mixing Ratio Calculator</h1>
+<p class="sub">Volume-based mixing ratios for 2K and 3K coating systems</p>
+
+<!-- TDS Upload -->
+<div class="tds-zone" onclick="document.getElementById('tdsfile').click()">
+  <input type="file" id="tdsfile" accept=".pdf" style="display:none" onchange="parseTDS(this)">
+  <div class="tds-icon">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M11 2H5a1 1 0 00-1 1v14a1 1 0 001 1h10a1 1 0 001-1V8l-5-6z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 2v6h5" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 11h6M7 14h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </div>
+  <div class="tds-text">
+    <strong>Upload TDS (PDF) — auto-fill from technical data sheet</strong>
+    <span>Click to choose file · product name, codes and ratios filled automatically</span>
+  </div>
+</div>
+
+<div class="tds-loading" id="tds-loading"><div class="spinner"></div><span id="tds-loading-txt">Reading technical data sheet…</span></div>
+<div class="tds-result" id="tds-result"></div>
+<div class="tds-err" id="tds-err"></div>
+
+<div class="modes">
+  <button class="mb on" id="b2k" onclick="sm('2k')">2K system<span class="ms">Pre-mix paint+thinner (Part A), then combine with hardener (Part B)</span></button>
+  <button class="mb" id="b3k" onclick="sm('3k')">3K system<span class="ms">3 separate feeds: paint (A) · hardener (B) · thinner (C)</span></button>
+</div>
+
+<div class="card">
+  <div class="card-hd"><span class="lbl">Paint</span><span class="bdg ba">Part A</span></div>
+  <div class="gr g2">
+    <div><label>Product name / code</label><input type="text" id="pn" placeholder="Paint"></div>
+    <div><label>% by weight (TDS)</label><input type="number" value="100" readonly></div>
+    <div><label>Density (g/ml)</label><input type="number" id="pd" placeholder="e.g. 1.00" step="0.001" min="0.01"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-hd"><span class="lbl">Thinner(s)</span><span class="bdg" id="thin-badge" style="background:#EDE9FE;color:#26215C">Part A</span></div>
+  <div id="tlist"></div>
+  <button class="badd" onclick="addT()"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Add thinner</button>
+</div>
+
+<div class="card">
+  <div class="card-hd"><span class="lbl">Hardener</span><span class="bdg bb">Part B</span></div>
+  <div class="gr g2">
+    <div><label>Product name / code</label><input type="text" id="hn" placeholder="Hardener"></div>
+    <div><label>% by weight (TDS)</label><input type="number" id="hp" placeholder="e.g. 33.3" step="0.1" min="0"></div>
+    <div><label>Density (g/ml)</label><input type="number" id="hd" placeholder="e.g. 1.06" step="0.001" min="0"></div>
+  </div>
+</div>
+
+<div class="trow">
+  <label>Target quantity</label>
+  <input type="number" id="tv" value="1000" min="0.001" step="any">
+  <select id="tu"><option value="ml">ml</option><option value="l">litres (l)</option></select>
+</div>
+
+<div class="emsg" id="em"></div>
+<button class="bcalc" onclick="calc()">Calculate mixing ratio</button>
+
+<div class="rwrap" id="rw">
+  <div class="rcard">
+    <div class="rl">Mix ratio — by volume</div>
+    <div class="rv" id="rv">—</div>
+    <div class="chips" id="rc"></div>
+    <div class="rnote" id="rnote"></div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-hd"><span id="tth">Component quantities</span></div>
+    <table>
+      <thead><tr><th>Component</th><th>Rel. vol.</th><th id="thv">Volume (ml)</th><th id="thw">Weight (g)</th><th>Share</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+  <div class="arow">
+    <button class="bprint" onclick="window.print()">Print</button>
+    <button class="bsave" onclick="saveH()">Save to history</button>
+  </div>
+</div>
+
+<div class="hsec" id="hs">
+  <div class="hhd"><h3>Calculation history</h3><button class="bclr" onclick="clrH()">Clear all</button></div>
+  <div id="hl"></div>
+</div>
+</div>
+
+<script>
+var _m='2k',_tid=0,_hist=[],_last=null;
+
+function sm(m){
+  _m=m;
+  document.getElementById('b2k').classList.toggle('on',m==='2k');
+  document.getElementById('b3k').classList.toggle('on',m==='3k');
+  var tb=document.getElementById('thin-badge');
+  if(m==='2k'){tb.textContent='Part A';tb.style.background='#EDE9FE';tb.style.color='#26215C';}
+  else{tb.textContent='Part C';tb.style.background='#FFF7ED';tb.style.color='#7C2D12';}
+  document.getElementById('rw').classList.remove('on');
+  document.getElementById('em').classList.remove('on');
+}
+
+function tLbl(i){return'Thinner '+i;}
+
+function addT(d){
+  _tid++;var id=_tid,lbl=tLbl(id);
+  var dl=document.getElementById('tlist'),div=document.createElement('div');
+  div.className='gr gtt';div.id='tr'+id;
+  div.innerHTML=
+    '<div><label>Product name / code</label><input type="text" class="tn" placeholder="'+lbl+'" '+(d&&d.n?'value="'+d.n+'"':'')+'></div>'+
+    '<div><label>% by weight (TDS)</label><input type="number" class="tp" placeholder="e.g. 40" step="0.1" min="0" '+(d&&d.p?'value="'+d.p+'"':'')+'></div>'+
+    '<div><label>Density (g/ml)</label><input type="number" class="td" placeholder="e.g. 0.86" step="0.001" min="0" '+(d&&d.d?'value="'+d.d+'"':'')+'></div>'+
+    '<button class="brm" onclick="rmT('+id+')" title="Remove">×</button>';
+  dl.appendChild(div);
+  if(d&&d.auto){
+    var row=document.getElementById('tr'+id);
+    row.querySelectorAll('input').forEach(function(el){if(el.value)el.classList.add('autofilled');});
+  }
+  return id;
+}
+
+function rmT(id){var e=document.getElementById('tr'+id);if(e)e.remove();}
+
+function gT(){
+  return Array.from(document.querySelectorAll('#tlist .gr')).map(function(r,i){
+    var p=parseFloat(r.querySelector('.tp').value),d=parseFloat(r.querySelector('.td').value),n=r.querySelector('.tn').value||tLbl(i+1);
+    return{n:n,p:p,d:d};
+  }).filter(function(t){return !isNaN(t.p)&&t.p>0&&!isNaN(t.d)&&t.d>0;});
+}
+
+function setAF(id,val){
+  var el=document.getElementById(id);
+  if(el&&val!==null&&val!==undefined&&val!==''){
+    el.value=val;
+    el.classList.add('autofilled');
+  }
+}
+
+// ── TDS Parser ──────────────────────────────────────────────────────────────
+async function parseTDS(input){
+  var file=input.files[0];
+  if(!file)return;
+  document.getElementById('tds-result').classList.remove('on');
+  document.getElementById('tds-err').classList.remove('on');
+  var ld=document.getElementById('tds-loading');
+  ld.classList.add('on');
+  document.getElementById('tds-loading-txt').textContent='Reading '+file.name+'…';
+
+  try{
+    var b64=await toB64(file);
+    document.getElementById('tds-loading-txt').textContent='Extracting data with AI…';
+
+    var prompt='You are a technical data sheet parser for coating/paint products. Extract the following fields from this TDS PDF and return ONLY a single valid JSON object with no markdown, no code fences, no extra text.\n\nFields to extract:\n- paint_name: product name and number (e.g. "PEHABIN CR 2C Deco Paint P529966-02")\n- paint_density: paint density in g/ml as a number, or null if not stated\n- hardener_name: hardener product code/name, or null\n- hardener_pct: hardener percentage relative to paint by volume. If the TDS gives ratio X:1 (paint:hardener), calculate as 100/X. For example ratio 5:1 → 20. If given differently, convert accordingly. Return as a number or null.\n- hardener_density: hardener density in g/ml as a number, or null\n- thinners: array of objects {name, pct, density} — if a thinner is listed with a % range use the midpoint; if optional/no % given use null for pct; density null if not stated\n- system: "2k" or "3k"\n- notes: brief string noting what was auto-filled vs what density values still need to be entered manually\n\nReturn ONLY valid JSON.';
+
+    var res=await fetch('/api/parse-tds',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pdfBase64:b64,prompt:prompt})
+    });
+
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error&&data.error.message?data.error.message:'API error '+res.status);
+
+    var raw=data.content.map(function(c){return c.text||'';}).join('');
+    var clean=raw.replace(/```json|```/g,'').trim();
+    var parsed=JSON.parse(clean);
+
+    applyTDS(parsed,file.name);
+
+  }catch(err){
+    ld.classList.remove('on');
+    var eEl=document.getElementById('tds-err');
+    eEl.textContent='Could not parse TDS: '+err.message+'. Please fill in the fields manually.';
+    eEl.classList.add('on');
+  }
+}
+
+function toB64(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(){res(r.result.split(',')[1]);};
+    r.onerror=function(){rej(new Error('File read failed'));};
+    r.readAsDataURL(file);
+  });
+}
+
+function applyTDS(d,fname){
+  document.getElementById('tds-loading').classList.remove('on');
+
+  // Clear autofilled styles first
+  document.querySelectorAll('.autofilled').forEach(function(el){el.classList.remove('autofilled');});
+
+  // Set mode
+  if(d.system==='3k'){sm('3k');}else{sm('2k');}
+
+  // Paint
+  setAF('pn',d.paint_name);
+  setAF('pd',d.paint_density);
+
+  // Hardener
+  setAF('hn',d.hardener_name);
+  setAF('hp',d.hardener_pct);
+  setAF('hd',d.hardener_density);
+
+  // Thinners — clear existing, add from TDS
+  document.getElementById('tlist').innerHTML='';
+  _tid=0;
+  if(d.thinners&&d.thinners.length>0){
+    d.thinners.forEach(function(t){
+      addT({n:t.name,p:t.pct,d:t.density,auto:true});
+    });
+  }else{
+    addT();
+  }
+
+  // Result box
+  var filled=[],missing=[];
+  if(d.paint_name)filled.push('paint name');
+  if(d.hardener_name)filled.push('hardener code');
+  if(d.hardener_pct)filled.push('hardener %');
+  if(!d.paint_density)missing.push('paint density');
+  if(!d.hardener_density)missing.push('hardener density');
+
+  var rEl=document.getElementById('tds-result');
+  rEl.innerHTML='<strong>TDS loaded: '+fname+'</strong>Auto-filled: '+filled.join(', ')+
+    (missing.length?'<br><span style="color:#065F46;opacity:.75">Still needed: <strong>'+missing.join(', ')+'</strong> — enter manually below</span>':'')+
+    (d.notes?'<br><em style="opacity:.7">'+d.notes+'</em>':'');
+  rEl.classList.add('on');
+}
+
+// ── Calculator ───────────────────────────────────────────────────────────────
+function calc(){
+  document.getElementById('em').classList.remove('on');
+  var pd=parseFloat(document.getElementById('pd').value);
+  var hp=parseFloat(document.getElementById('hp').value);
+  var hd=parseFloat(document.getElementById('hd').value);
+  var tv=parseFloat(document.getElementById('tv').value)||1000;
+  var tu=document.getElementById('tu').value;
+  if(!pd||pd<=0){se('Enter paint density (g/ml).');return;}
+  if(!hp||hp<=0){se('Enter hardener % from TDS sheet.');return;}
+  if(!hd||hd<=0){se('Enter hardener density (g/ml).');return;}
+
+  var pn=document.getElementById('pn').value||'Paint';
+  var hn=document.getElementById('hn').value||'Hardener';
+  var pv=100/pd,hv=hp/hd;
+  var ts=gT();
+  var tv2=ts.reduce(function(s,t){return s+t.p/t.d;},0);
+  var tot=pv+hv+tv2;
+  var rows='',tw=0,rd=[];
+
+  if(_m==='2k'){
+    var partA=pv+tv2,ratio=partA/hv;
+    var rt=ratio.toFixed(2)+' : 1.00';
+    var ch='<span class="chip" style="background:#EDE9FE;color:#3C3489">Part A (paint+thinner): '+ratio.toFixed(2)+'</span>'+
+            '<span class="chip" style="background:#DCFCE7;color:#27500A">Part B (hardener): 1.00</span>';
+
+    var frP=pv/tot,volP=frP*tv,wtP=volP*pd;tw+=wtP;
+    rows+='<tr><td class="indent"><span class="dot" style="background:#7C3AED"></span>'+pn+'</td><td class="mn">'+pv.toFixed(3)+'</td><td class="mn">'+volP.toFixed(2)+'</td><td class="mn">'+wtP.toFixed(2)+'</td><td class="mn">'+(frP*100).toFixed(1)+'%</td></tr>';
+    rd.push({n:pn,v:volP.toFixed(2)});
+    ts.forEach(function(t){
+      var vi=t.p/t.d,frT=vi/tot,volT=frT*tv,wtT=volT*t.d;tw+=wtT;
+      rows+='<tr><td class="indent"><span class="dot" style="background:#A78BFA"></span>'+t.n+'</td><td class="mn">'+vi.toFixed(3)+'</td><td class="mn">'+volT.toFixed(2)+'</td><td class="mn">'+wtT.toFixed(2)+'</td><td class="mn">'+(frT*100).toFixed(1)+'%</td></tr>';
+      rd.push({n:t.n,v:volT.toFixed(2)});
+    });
+    var frA=partA/tot,volA=frA*tv;
+    rows+='<tr class="tr-subtotal"><td>Part A total (pre-mixed)</td><td class="mn">'+partA.toFixed(3)+'</td><td class="mn">'+volA.toFixed(2)+'</td><td class="mn">—</td><td class="mn">'+(frA*100).toFixed(1)+'%</td></tr>';
+    var frH=hv/tot,volH=frH*tv,wtH=volH*hd;tw+=wtH;
+    rows+='<tr><td><span class="dot" style="background:#16A34A"></span>'+hn+' <small style="color:#9CA3AF;font-size:11px">(Part B)</small></td><td class="mn">'+hv.toFixed(3)+'</td><td class="mn">'+volH.toFixed(2)+'</td><td class="mn">'+wtH.toFixed(2)+'</td><td class="mn">'+(frH*100).toFixed(1)+'%</td></tr>';
+    rd.push({n:hn,v:volH.toFixed(2)});
+    rows+='<tr class="tr-total"><td>Total</td><td class="mn">'+tot.toFixed(3)+'</td><td class="mn">'+tv.toFixed(2)+'</td><td class="mn">'+tw.toFixed(2)+'</td><td class="mn">100%</td></tr>';
+    document.getElementById('rv').textContent=rt;
+    document.getElementById('rc').innerHTML=ch;
+    document.getElementById('rnote').textContent='';
+    _last={mode:'2K',ratio:rt,target:tv+' '+tu,comps:rd,date:new Date().toLocaleDateString('en-GB'),time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
+
+  }else{
+    var ra=pv/hv,rc3=tv2>0?tv2/hv:0,rt3,ch3;
+    if(tv2>0){
+      rt3=ra.toFixed(2)+' : 1.00 : '+rc3.toFixed(2);
+      ch3='<span class="chip" style="background:#EDE9FE;color:#3C3489">A (paint): '+ra.toFixed(2)+'</span><span class="chip" style="background:#DCFCE7;color:#27500A">B (hardener): 1.00</span><span class="chip" style="background:#FFF7ED;color:#633806">C (thinner): '+rc3.toFixed(2)+'</span>';
+    }else{
+      rt3=ra.toFixed(2)+' : 1.00';
+      ch3='<span class="chip" style="background:#EDE9FE;color:#3C3489">A (paint): '+ra.toFixed(2)+'</span><span class="chip" style="background:#DCFCE7;color:#27500A">B (hardener): 1.00</span>';
+    }
+    var ac=[{n:pn,v:pv,d:pd,c:'#7C3AED',l:'A'},{n:hn,v:hv,d:hd,c:'#16A34A',l:'B'}];
+    ts.forEach(function(t){ac.push({n:t.n,v:t.p/t.d,d:t.d,c:'#C2410C',l:'C'});});
+    ac.forEach(function(c){
+      var fr=c.v/tot,vol=fr*tv,wt=vol*c.d;tw+=wt;
+      rows+='<tr><td><span class="dot" style="background:'+c.c+'"></span>'+c.n+' <small style="color:#9CA3AF;font-size:11px">(Part '+c.l+')</small></td><td class="mn">'+c.v.toFixed(3)+'</td><td class="mn">'+vol.toFixed(2)+'</td><td class="mn">'+wt.toFixed(2)+'</td><td class="mn">'+(fr*100).toFixed(1)+'%</td></tr>';
+      rd.push({n:c.n,v:vol.toFixed(2)});
+    });
+    rows+='<tr class="tr-total"><td>Total</td><td class="mn">'+tot.toFixed(3)+'</td><td class="mn">'+tv.toFixed(2)+'</td><td class="mn">'+tw.toFixed(2)+'</td><td class="mn">100%</td></tr>';
+    document.getElementById('rv').textContent=rt3;
+    document.getElementById('rc').innerHTML=ch3;
+    document.getElementById('rnote').textContent=tv2>0?'Ratio normalized to B (hardener) = 1.00':'';
+    _last={mode:'3K',ratio:rt3,target:tv+' '+tu,comps:rd,date:new Date().toLocaleDateString('en-GB'),time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
+  }
+
+  document.getElementById('tb').innerHTML=rows;
+  document.getElementById('thv').textContent='Volume ('+tu+')';
+  document.getElementById('thw').textContent='Weight ('+(tu==='l'?'kg':'g')+')';
+  document.getElementById('tth').textContent='Component quantities for '+tv+' '+tu;
+  document.getElementById('rw').classList.add('on');
+}
+
+function se(msg){var e=document.getElementById('em');e.textContent=msg;e.classList.add('on');}
+function saveH(){
+  if(!_last)return;_hist.unshift(_last);rH();
+  var b=document.querySelector('.bsave');b.textContent='Saved ✓';b.style.borderColor='#86EFAC';b.style.color='#15803D';
+  setTimeout(function(){b.textContent='Save to history';b.style.borderColor='';b.style.color='';},1800);
+}
+function rH(){
+  if(!_hist.length){document.getElementById('hs').classList.remove('on');return;}
+  document.getElementById('hs').classList.add('on');
+  document.getElementById('hl').innerHTML=_hist.map(function(h){
+    return'<div class="hi"><div class="hitp"><span class="hrat">'+h.ratio+'</span><span class="hmeta">'+h.mode+' · '+h.date+' '+h.time+' · '+h.target+'</span></div>'+
+    '<div class="hdet">'+h.comps.map(function(c){return c.n+': <strong>'+c.v+'</strong>';}).join(' / ')+'</div></div>';
+  }).join('');
+}
+function clrH(){_hist=[];rH();}
+addT();
+</script>
+</body>
+</html>

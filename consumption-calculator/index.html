@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consumption Calculator — Project Jan</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6D28D9;--pl:#EDE9FE;--pt:#26215C;
+  --o:#C2410C;--ol:#FFF7ED;--ot:#7C2D12;
+  --g:#15803D;--gl:#DCFCE7;--gt:#14532D;
+  --grad:linear-gradient(135deg,#6D28D9 0%,#9333EA 50%,#C2410C 100%);
+  --border:#E5E7EB;--bg:#F9FAFB;--card:#fff;--text:#111827;--muted:#6B7280;--hint:#9CA3AF;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#F3F4F6;color:var(--text);min-height:100vh;padding:2rem 1rem 5rem}
+.wrap{max-width:820px;margin:0 auto}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:1.5rem;transition:color .13s}
+.back:hover{color:var(--text)}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:12px}
+.page-head h1{font-family:'Syne',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.01em}
+.page-head p{font-size:13px;color:var(--muted);margin-top:3px}
+.btn-add-layer{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:var(--grad);color:#fff;border:none;border-radius:100px;font-size:13.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .13s}
+.btn-add-layer:hover{opacity:.88}
+
+/* Component table */
+.comp-table{width:100%;border-collapse:collapse;margin-bottom:.5rem;table-layout:fixed}
+.comp-table th{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:0 8px 6px;text-align:left}
+.comp-table th:first-child{width:36%}
+.comp-table th:nth-child(2),.comp-table th:nth-child(3),.comp-table th:nth-child(4),.comp-table th:nth-child(5){width:14%}
+.comp-table th:last-child{width:8%}
+.comp-table th.tc{text-align:center}
+.comp-table td{padding:4px 4px}
+.comp-table td input{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;transition:border-color .12s;box-sizing:border-box}
+.comp-table td input::placeholder{color:#C0C0C0;font-style:italic}
+.comp-table td input:focus{border-color:var(--p);background:#fff}
+.comp-table td input[readonly]{color:var(--hint);background:#F3F4F6}
+.comp-table td input.af{border-color:#6EE7B7;background:#F0FDF4}
+.comp-table .comp-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px;white-space:nowrap}
+.comp-table .cb-a{background:var(--pl);color:var(--pt)}
+.comp-table .cb-b{background:var(--gl);color:var(--gt)}
+.comp-table .cb-t{background:#F1F5F9;color:var(--muted)}
+.comp-table .comp-name-cell{display:flex;align-items:center;gap:6px;overflow:hidden}
+.comp-table .comp-name-cell input{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.comp-table td.del-cell{width:32px;padding:4px 2px}
+.comp-table .btn-rm-row{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--hint);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .13s}
+.comp-table .btn-rm-row:hover{background:#FEF2F2;border-color:#FCA5A5;color:#DC2626}
+.thinner-row{display:grid;grid-template-columns:36% 14% 14% 14% 14% 8%;gap:4px;align-items:center;margin-top:2px;box-sizing:border-box}
+.thinner-row input{padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);outline:none;color:var(--text);width:100%;text-align:center}
+.thinner-row input::placeholder{color:#C0C0C0;font-style:italic}
+.thinner-row input:focus{border-color:var(--p);background:#fff}
+.thinner-row input.af{border-color:#6EE7B7;background:#F0FDF4}
+.thinner-row input[readonly]{background:#F3F4F6;color:var(--hint)}
+/* Layer card */
+.layer{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:1rem;overflow:hidden}
+.layer-head{display:flex;align-items:center;gap:12px;padding:.9rem 1.25rem;border-bottom:1px solid #F3F4F6;cursor:pointer;user-select:none}
+.layer-num{width:28px;height:28px;border-radius:50%;background:var(--grad);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Syne',sans-serif}
+.layer-name-input{flex:1;border:none;background:transparent;font-size:15px;font-weight:500;font-family:'Syne',sans-serif;color:var(--text);outline:none;min-width:0}
+.layer-name-input::placeholder{color:var(--hint);font-weight:400}
+.layer-toggle{font-size:13px;color:var(--hint);transition:transform .2s;flex-shrink:0}
+.layer-toggle.open{transform:rotate(180deg)}
+.btn-del-layer{width:28px;height:28px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--hint);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s;flex-shrink:0;font-family:inherit}
+.btn-del-layer:hover{background:#FEF2F2;border-color:#FCA5A5;color:#DC2626}
+
+.layer-body{padding:1.1rem 1.25rem;display:none}
+.layer-body.open{display:block}
+
+/* Upload zone inside layer */
+.upload-zone{border:1.5px dashed #C4B5FD;border-radius:10px;padding:.8rem 1rem;margin-bottom:1.1rem;background:#F5F3FF;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.upload-zone:hover{border-color:var(--p);background:var(--pl)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone-icon{width:32px;height:32px;border-radius:7px;background:var(--p);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.upload-zone-txt strong{display:block;font-size:12.5px;font-weight:500;color:var(--pt)}
+.upload-zone-txt span{font-size:11px;color:#7C3AED;opacity:.75}
+.upload-loading{display:none;align-items:center;gap:8px;padding:.7rem 1rem;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;margin-bottom:1rem;font-size:12.5px;color:var(--pt)}
+.upload-loading.on{display:flex}
+.upload-ok{display:none;padding:.7rem 1rem;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;margin-bottom:1rem;font-size:12px;color:#065F46}
+.upload-ok.on{display:block}
+.upload-ok strong{display:block;font-size:12.5px;margin-bottom:2px}
+.upload-err{display:none;padding:.7rem 1rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;margin-bottom:1rem;font-size:12px;color:#DC2626}
+.upload-err.on{display:block}
+.spinner{width:14px;height:14px;border:2px solid #C4B5FD;border-top-color:var(--p);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Section headers inside layer */
+.sec-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;margin-top:.9rem}
+.sec-lbl{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--hint)}
+.badge{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:100px}
+.badge-a{background:var(--pl);color:var(--pt)}
+.badge-b{background:var(--gl);color:var(--gt)}
+.badge-c{background:var(--ol);color:var(--ot)}
+
+.grid{display:grid;gap:9px;align-items:end;margin-bottom:9px}
+.g3{grid-template-columns:1.6fr 1fr 1fr 1fr}
+.g4{grid-template-columns:1.6fr 1fr 1fr 1fr 36px}
+.g2{grid-template-columns:1fr 1fr}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+input[type=text],input[type=number]{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;transition:border-color .12s,box-shadow .12s}
+input[type=text]::placeholder,input[type=number]::placeholder{color:#C0C0C0;font-style:italic}
+input:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.1)}
+input[readonly]{color:var(--hint);background:#F3F4F6}
+input.af{border-color:#6EE7B7;background:#F0FDF4}
+
+/* Film thickness triple input */
+.thick-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.thick-wrap input{border:none;border-radius:0;border-right:1px solid var(--border);text-align:center;background:var(--bg)}
+.thick-wrap input:last-child{border-right:none}
+.thick-wrap input:focus{box-shadow:none;background:#fff;border-color:transparent;outline:2px solid var(--p);outline-offset:-1px}
+.thick-labels{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:3px}
+.thick-labels span{font-size:10px;text-align:center;color:var(--hint)}
+
+.btn-add-comp{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1px dashed #C4B5FD;border-radius:8px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;transition:all .13s;margin-top:3px}
+.btn-add-comp:hover{border-color:var(--p);color:var(--p);background:var(--pl)}
+.btn-rm{width:32px;height:32px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--muted);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s;flex-shrink:0;font-family:inherit;line-height:1;align-self:end}
+.btn-rm:hover{background:#FEF2F2;border-color:#FCA5A5;color:#DC2626}
+
+.divider{border:none;border-top:1px solid #F3F4F6;margin:1.1rem 0}
+
+/* Target area + calc */
+.target-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.875rem 1.25rem;display:flex;align-items:center;gap:12px;margin-top:1.25rem;flex-wrap:wrap;position:relative;z-index:10}
+.target-bar>label{margin:0;font-size:14px;font-weight:500;white-space:nowrap}
+.target-bar input{max-width:110px}
+.btn-calc{padding:10px 24px;background:var(--grad);color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .13s;white-space:nowrap}
+.btn-calc:hover{opacity:.88}
+
+/* Results */
+.results{display:none;margin-top:1.5rem}
+.results.on{display:block}
+.res-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin-bottom:.75rem}
+.res-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:.8rem}
+.res-card-head{padding:.7rem 1.25rem;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;gap:8px}
+.res-card-head span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--hint)}
+.res-card-head .layer-dot{width:8px;height:8px;border-radius:50%;background:var(--grad);flex-shrink:0}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+thead th{padding:8px 1rem;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);background:var(--bg);border-bottom:1px solid #F3F4F6}
+thead th:first-child{text-align:left;width:30%}
+tbody td{padding:9px 1rem;border-bottom:1px solid #F9FAFB;color:var(--text);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td:first-child{text-align:left;font-weight:500;font-size:12.5px}
+.mn{font-family:'JetBrains Mono',monospace;font-size:12px}
+.tr-total td{background:var(--bg);font-weight:600;border-bottom:none}
+.tr-system td{background:linear-gradient(135deg,#6D28D9,#9333EA 50%,#C2410C);color:white!important;font-weight:600;border-bottom:none}
+.tr-system .mn{color:white!important}
+
+/* Summary metrics */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:.8rem}
+.metric{background:var(--bg);border-radius:10px;padding:.875rem 1rem}
+.metric-lbl{font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:400}
+.metric-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.metric-unit{font-size:11px;color:var(--hint);margin-top:2px}
+
+@media(max-width:600px){.g3{grid-template-columns:1fr 1fr}.g4{grid-template-columns:1fr 1fr}.g4 .btn-rm{grid-column:span 2;justify-self:end;width:100%}}
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body{background:white!important;padding:.5rem 0!important}
+  .wrap{max-width:100%!important}
+  .btn-add-layer,.upload-zone,.upload-ok,.upload-err,.layer-body .btn-rm,
+  .btn-add-comp,.back,.btn-export,.layer-toggle,.btn-del-layer{display:none!important}
+  .target-bar{display:none!important}
+  .print-header{display:flex!important}
+  .layer{border:1px solid #ddd!important;margin-bottom:.6rem!important;break-inside:avoid}
+  .layer-body{display:block!important}
+  .layer-head{border-bottom:1px solid #eee!important;padding:.5rem .8rem!important}
+  .layer-body{padding:.6rem .8rem!important}
+  .comp-table th,.comp-table td{padding:4px 6px!important;font-size:11px!important}
+  .results{display:block!important}
+  .metrics-grid{grid-template-columns:repeat(4,1fr)!important;gap:6px!important}
+  .metric{padding:.5rem .7rem!important}
+  .metric-val{font-size:16px!important}
+  .res-card{break-inside:avoid}
+  table{font-size:11px!important}
+  thead th,tbody td{padding:5px 8px!important}
+  .thinner-row input,.comp-table td input{border:none!important;background:transparent!important;padding:2px 4px!important;font-size:11px!important}
+  .thinner-row{gap:2px!important}
+  input.af{background:transparent!important}
+  @page{size:A4;margin:12mm 10mm}
+}
+.print-header{display:none;align-items:center;justify-content:space-between;margin-bottom:1.2rem;padding-bottom:.8rem;border-bottom:2px solid #6D28D9}
+.print-logo-box{display:flex;align-items:center;gap:0}
+.print-logo-border{border:2px solid #6D28D9;padding:3px 7px;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;background:linear-gradient(135deg,#6D28D9,#C2410C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.05em}
+.print-logo-jan{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;background:linear-gradient(135deg,#6D28D9,#C2410C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.01em;margin-left:2px}
+.print-logo-sub{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#9CA3AF;display:block;margin-top:-2px}
+.print-meta{text-align:right;font-size:11px;color:#6B7280}
+.print-meta strong{display:block;font-size:13px;color:#111;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a href="../" class="back">
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  Back to tools
+</a>
+<div class="page-head">
+  <div>
+    <h1>Consumption Calculator</h1>
+    <p>Theoretical paint consumption per layer — g/m², m²/kg and cost per m²</p>
+  </div>
+  <!-- Print header (visible only when printing) -->
+  <div class="print-header" id="print-header">
+    <div>
+      <div class="print-logo-box">
+        <span class="print-logo-border">PROJECT</span><span class="print-logo-jan">JAN</span>
+      </div>
+      <span class="print-logo-sub">Coating Tools</span>
+    </div>
+    <div class="print-meta">
+      <strong>Consumption Calculation Report</strong>
+      <span id="print-date"></span>
+    </div>
+  </div>
+  <button class="btn-add-layer" onclick="addLayer()">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Add layer
+  </button>
+</div>
+
+<div id="layers"></div>
+
+<div class="target-bar" style="justify-content:center">
+  <button class="btn-calc" onclick="calculate()">Calculate consumption</button>
+  <button class="btn-calc btn-export" onclick="doPrint()" style="background:white;color:var(--p);border:1.5px solid var(--p);margin-left:8px">&#8595; Export PDF</button>
+</div>
+
+<div class="results" id="results">
+  <div class="res-title">Results</div>
+  <div id="res-content"></div>
+</div>
+</div>
+
+<script>
+var _lid=0,_cid=0;
+
+function addLayer(d){
+  _lid++;var id=_lid;
+  var wrap=document.getElementById('layers');
+  var div=document.createElement('div');
+  div.className='layer';div.id='layer-'+id;
+  var name=d&&d.name?d.name:'Layer '+id;
+  div.innerHTML=
+    '<div class="layer-head" onclick="toggleLayer('+id+')">' +
+      '<div class="layer-num">'+id+'</div>' +
+      '<input type="text" class="layer-name-input" placeholder="Layer name (e.g. 2C Primer)" value="'+escQ(name)+'" onclick="event.stopPropagation()">' +
+      '<svg class="layer-toggle" id="lt-'+id+'" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '<button class="btn-del-layer" onclick="event.stopPropagation();delLayer('+id+')" title="Remove layer">×</button>' +
+    '</div>' +
+    '<div class="layer-body open" id="lb-'+id+'">' +
+      '<!-- Upload -->' +
+      '<div class="upload-zone" id="uz-'+id+'">' +
+        '<input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple onchange="uploadDocs(this,'+id+')">' +
+        '<div class="upload-zone-icon"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M11 2H5a1 1 0 00-1 1v14a1 1 0 001 1h10a1 1 0 001-1V8l-5-6z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 2v6h5" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 11h6M7 14h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>' +
+        '<div class="upload-zone-txt"><strong>Upload TDS / MSDS / Price offer (PDF)</strong><span>Multiple files · AI extracts what\'s available from each</span></div>' +
+      '</div>' +
+      '<div class="upload-loading" id="ul-'+id+'"><div class="spinner"></div><span id="ult-'+id+'">Extracting data…</span></div>' +
+      '<div class="upload-ok" id="uo-'+id+'"></div>' +
+      '<div class="upload-err" id="ue-'+id+'"></div>' +
+      '<!-- Components table -->' +
+      '<table class="comp-table">' +
+        '<thead><tr>' +
+          '<th>Component</th>' +
+          '<th class="tc">Density<br><small style="font-weight:400;text-transform:none;letter-spacing:0">(g/ml)</small></th>' +
+          '<th class="tc">Solid content<br><small style="font-weight:400;text-transform:none;letter-spacing:0">by vol. (%)</small></th>' +
+          '<th class="tc">Mix ratio<br><small style="font-weight:400;text-transform:none;letter-spacing:0">by weight</small></th>' +
+          '<th class="tc">Price / kg<br><small style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</small></th>' +
+          '<th></th>' +
+        '</tr></thead>' +
+        '<tbody>' +
+          '<!-- Paint row -->' +
+          '<tr>' +
+            '<td><div class="comp-name-cell"><span class="comp-badge cb-a">Paint</span><input type="text" id="pname-'+id+'" placeholder="Paint" style="min-width:0"></div></td>' +
+            '<td><input type="number" id="pdens-'+id+'" placeholder="e.g. 1.05" step="0.001" min="0" style="text-align:center"></td>' +
+            '<td><input type="number" id="psc-'+id+'" placeholder="e.g. 54" step="0.1" min="0" max="100" style="text-align:center"></td>' +
+            '<td><input type="number" value="100" readonly style="text-align:center;background:#F3F4F6;color:var(--hint)"></td>' +
+            '<td><input type="number" id="pprice-'+id+'" placeholder="" step="0.01" min="0" style="text-align:center"></td>' +
+            '<td></td>' +
+          '</tr>' +
+          '<!-- Hardener row -->' +
+          '<tr>' +
+            '<td><div class="comp-name-cell"><span class="comp-badge cb-b">Hardener</span><input type="text" id="hname-'+id+'" placeholder="Hardener" style="min-width:0"></div></td>' +
+            '<td><input type="number" id="hdens-'+id+'" placeholder="e.g. 1.06" step="0.001" min="0" style="text-align:center"></td>' +
+            '<td><input type="number" id="hsc-'+id+'" placeholder="e.g. 51" step="0.1" min="0" max="100" style="text-align:center"></td>' +
+            '<td><input type="number" id="hratio-'+id+'" placeholder="e.g. 25" step="0.01" min="0" style="text-align:center"></td>' +
+            '<td><input type="number" id="hprice-'+id+'" placeholder="" step="0.01" min="0" style="text-align:center"></td>' +
+            '<td></td>' +
+          '</tr>' +
+        '</tbody>' +
+      '</table>' +
+      '<div id="thinners-'+id+'"></div>' +
+      '<button class="btn-add-comp" onclick="addThinner('+id+')"><svg width="11" height="11" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Add thinner</button>' +
+      '<hr class="divider">' +
+      '<!-- Film thickness -->' +
+      '<div style="margin-top:.2rem;max-width:280px">' +
+        '<label>Dry film thickness (μm)</label>' +
+        '<div style="display:flex;margin-top:5px;margin-bottom:3px">' +
+          '<span style="width:58px;flex-shrink:0;font-size:10px;text-align:center;color:var(--hint)">min</span>' +
+          '<span style="flex:1;font-size:10px;text-align:center;color:var(--muted);font-weight:500">nominal</span>' +
+          '<span style="width:58px;flex-shrink:0;font-size:10px;text-align:center;color:var(--hint)">max</span>' +
+        '</div>' +
+        '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
+          '<input type="number" id="tmin-'+id+'" placeholder="—" step="1" min="0" style="width:58px;flex-shrink:0;border:none;border-right:1px solid var(--border);text-align:center;background:#F3F4F6;color:var(--hint);font-size:12px;padding:7px 4px;outline:none">' +
+          '<input type="number" id="tnom-'+id+'" placeholder="e.g. 30" step="1" min="0" style="flex:1;border:none;text-align:center;background:var(--bg);font-size:13.5px;font-weight:500;padding:7px 8px;outline:none">' +
+          '<input type="number" id="tmax-'+id+'" placeholder="—" step="1" min="0" style="width:58px;flex-shrink:0;border:none;border-left:1px solid var(--border);text-align:center;background:#F3F4F6;color:var(--hint);font-size:12px;padding:7px 4px;outline:none">' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  wrap.appendChild(div);
+  if(d){applyLayerData(id,d);}
+}
+
+function escQ(s){return(s||'').replace(/"/g,'&quot;');}
+function toggleLayer(id){var b=document.getElementById('lb-'+id),t=document.getElementById('lt-'+id);var open=b.classList.toggle('open');t.classList.toggle('open',open);}
+function delLayer(id){var e=document.getElementById('layer-'+id);if(e)e.remove();}
+
+function addThinner(lid,d){
+  _cid++;var cid=_cid;
+  var wrap=document.getElementById('thinners-'+lid),div=document.createElement('div');
+  div.id='thin-'+lid+'-'+cid;
+  div.className='thinner-row';
+  var nv=d&&d.n?escQ(d.n):'',wv=d&&d.w?d.w:'',dv=d&&d.d?d.d:'',pv=d&&d.p?d.p:'';
+  div.innerHTML=
+    '<div style="display:flex;align-items:center;gap:6px"><span class="comp-badge" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB;font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px;white-space:nowrap;flex-shrink:0">Thinner</span><input type="text" class="tn" placeholder="Thinner" value="'+nv+'" style="min-width:0;flex:1;text-align:left"></div>'+
+    '<input type="number" class="td" placeholder="e.g. 0.86" step="0.001" min="0" value="'+dv+'">'+
+    '<input type="number" readonly placeholder="0%">'+
+    '<input type="number" class="tw" placeholder="e.g. 50" step="0.01" min="0" value="'+wv+'">'+
+    '<input type="number" class="tp" placeholder="" step="0.01" min="0" value="'+pv+'">'+
+    '<button onclick="rmThinner(\''+lid+'-'+cid+'\')" style="width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--hint);font-size:16px;cursor:pointer;flex-shrink:0;font-family:inherit;display:flex;align-items:center;justify-content:center" title="Remove">×</button>';
+    '<button onclick="rmThinner(\''+lid+'-'+cid+'\')" style="width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--hint);font-size:16px;cursor:pointer;flex-shrink:0;font-family:inherit;display:flex;align-items:center;justify-content:center" title="Remove">×</button>';
+  wrap.appendChild(div);
+  if(d&&d.auto)div.querySelectorAll('input').forEach(function(el){if(el.value)el.classList.add('af');});
+}
+function rmThinner(id){var e=document.getElementById('thin-'+id);if(e)e.remove();}
+
+function setAF(id,val){var el=document.getElementById(id);if(el&&val!==null&&val!==undefined&&val!==''){el.value=val;el.classList.add('af');}}
+
+function applyLayerData(lid,d){
+  if(d.paint_name)setAF('pname-'+lid,d.paint_name);
+  if(d.paint_density)setAF('pdens-'+lid,d.paint_density);
+  if(d.paint_solid_content)setAF('psc-'+lid,d.paint_solid_content);
+  if(d.paint_price)setAF('pprice-'+lid,d.paint_price);
+  if(d.hardener_name)setAF('hname-'+lid,d.hardener_name);
+  if(d.hardener_ratio)setAF('hratio-'+lid,d.hardener_ratio);
+  if(d.hardener_density)setAF('hdens-'+lid,d.hardener_density);
+  if(d.hardener_solid_content)setAF('hsc-'+lid,d.hardener_solid_content);
+  if(d.hardener_solid_content)setAF('hsc-'+lid,d.hardener_solid_content);
+  if(d.hardener_price)setAF('hprice-'+lid,d.hardener_price);
+  if(d.dry_film_min)setAF('tmin-'+lid,d.dry_film_min);
+  if(d.dry_film_nom)setAF('tnom-'+lid,d.dry_film_nom);
+  if(d.dry_film_max)setAF('tmax-'+lid,d.dry_film_max);
+  if(d.layer_name){var ni=document.querySelector('#layer-'+lid+' .layer-name-input');if(ni)ni.value=d.layer_name;}
+  document.getElementById('thinners-'+lid).innerHTML='';
+  if(d.thinners&&d.thinners.length){d.thinners.forEach(function(t){addThinner(lid,{n:t.name,w:t.weight_ratio,d:t.density,p:t.price_per_l,auto:true});});}
+  if(!d.thinners||!d.thinners.length){addThinner(lid);}
+}
+
+async function uploadDocs(input,lid){
+  var files=Array.from(input.files).slice(0,10);if(!files.length)return;
+  var uz=document.getElementById('uz-'+lid),ul=document.getElementById('ul-'+lid),uo=document.getElementById('uo-'+lid),ue=document.getElementById('ue-'+lid);
+  uo.classList.remove('on');ue.classList.remove('on');uz.style.display='none';ul.classList.add('on');
+  var extractPrompt='You are a technical data extractor for automotive paint/coating products. Read the provided document carefully. It may be in any language (Romanian, German, English, Czech). Return ONLY a single valid JSON object - no markdown, no code fences.\n\nCRITICAL DENSITY RULES:\n- paint_density: density of the BASE PAINT from MSDS/SDS Section 9 (single value like 1.22). If not available, use TDS range midpoint.\n- hardener_density: density from the HARDENER MSDS/SDS Section 9 only.\n- thinner density: from thinner MSDS Section 9 only (typically 0.85-0.92).\n\nSOLID CONTENT RULES:\n- paint_solid_content: solid content % of BASE PAINT from TDS or MSDS Section 9.2.\n- hardener_solid_content: solid content % of HARDENER from hardener MSDS Section 9.2.\n- thinners[].solid_content: always 0.\n\nOTHER RULES:\n- hardener_ratio: weight ratio relative to base=100. TDS \"4:1 by weight\" means hardener_ratio=25.\n- Prices: from price offer documents only.\n\nFields to return (use null for unknown):\n- layer_name, paint_name, paint_density, paint_solid_content, paint_price\n- hardener_name, hardener_ratio, hardener_density, hardener_solid_content, hardener_price\n- dry_film_min, dry_film_nom (midpoint of range), dry_film_max\n- thinners: [{name, weight_ratio, density, solid_content, price_per_l}]\nReturn ONLY valid JSON.';
+  try{
+    var results=[];
+    for(var i=0;i<files.length;i++){
+      var f=files[i];
+      document.getElementById('ult-'+lid).textContent='Processing '+f.name+' ('+(i+1)+'/'+files.length+')\u2026';
+      var b64=await new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result.split(',')[1]);};r.onerror=function(){rej(new Error('File read failed'));};r.readAsDataURL(f);});
+      if(i>0){await new Promise(function(r){setTimeout(r,3000);});}
+      var res=await fetch('/api/parse-tds',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pdfBase64:b64,prompt:extractPrompt})});
+      var data=await res.json();
+      if(!res.ok)throw new Error(data.error&&data.error.message?data.error.message:'API error '+res.status);
+      if(!data.content||!Array.isArray(data.content)){var errMsg=(data.error&&data.error.message)?data.error.message:(typeof data.error==='string'?data.error:'Unexpected server response: '+JSON.stringify(data.error||data));throw new Error(errMsg);}
+      var raw=data.content.map(function(c){return c.text||'';}).join('');
+      var parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      results.push(parsed);
+    }
+    var merged={thinners:[]};
+    var fields=['layer_name','paint_name','paint_density','paint_solid_content','paint_price','hardener_name','hardener_ratio','hardener_density','hardener_solid_content','hardener_price','dry_film_min','dry_film_nom','dry_film_max'];
+    fields.forEach(function(k){
+      for(var j=0;j<results.length;j++){if(results[j][k]!=null&&results[j][k]!==''){merged[k]=results[j][k];return;}}
+    });
+    results.forEach(function(r){if(r.thinners&&r.thinners.length)r.thinners.forEach(function(t){merged.thinners.push(t);});});
+    applyLayerData(lid,merged);
+    ul.classList.remove('on');
+    var filled=[];
+    if(merged.paint_name)filled.push('paint name');
+    if(merged.paint_density)filled.push('density');
+    if(merged.paint_solid_content)filled.push('solid content');
+    if(merged.hardener_name)filled.push('hardener');
+    if(merged.dry_film_nom)filled.push('film thickness');
+    if(merged.paint_price||merged.hardener_price)filled.push('prices');
+    var missing=[];
+    if(!merged.paint_density)missing.push('paint density');
+    if(!merged.paint_solid_content)missing.push('solid content');
+    uo.innerHTML='<strong>'+files.map(function(f){return f.name;}).join(', ')+'</strong>Auto-filled: '+filled.join(', ')+
+      (missing.length?'<br><span style="opacity:.8">Still needed: <strong>'+missing.join(', ')+'</strong></span>':'');
+    uo.classList.add('on');
+  }catch(err){
+    ul.classList.remove('on');uz.style.display='';
+    ue.textContent='Could not parse documents: '+err.message+'. Please fill in manually.';
+    ue.classList.add('on');
+  }
+}
+
+function getThinners(lid){
+  return Array.from(document.querySelectorAll('#thinners-'+lid+' .thinner-row')).map(function(r){
+    return{n:r.querySelector('.tn').value||'Thinner',w:parseFloat(r.querySelector('.tw').value)||0,d:parseFloat(r.querySelector('.td').value)||0,p:parseFloat(r.querySelector('.tp').value)||0};
+  }).filter(function(t){return t.w>0;});
+}
+
+function calcMixPrice(base_ratio,base_price,hard_ratio,hard_price,thinners){
+  var totalW=100;
+  var totalCost=base_price?100*base_price:0;
+  var hasPrices=!!base_price;
+  if(hard_ratio>0&&hard_price){totalW+=hard_ratio;totalCost+=hard_ratio*hard_price;hasPrices=true;}
+  else if(hard_ratio>0){totalW+=hard_ratio;}
+  thinners.forEach(function(t){
+    if(t.w>0){
+      totalW+=t.w;
+      if(t.p){
+        var density=t.d||0.87;
+        totalCost+=t.w*(t.p/density);
+        hasPrices=true;
+      }
+    }
+  });
+  return hasPrices&&base_price?(totalCost/totalW):null;
+}
+
+function calculate(){
+  var area=1;
+  var layers=document.querySelectorAll('.layer');
+  if(!layers.length){alert('Add at least one layer.');return;}
+  var rows='';var totalCostSystem=0;var hasSystemCost=false;var systemEfficiency=0;
+  var layerResults=[];
+  layers.forEach(function(layer,idx){
+    var lid=layer.id.replace('layer-','');
+    var nameEl=layer.querySelector('.layer-name-input');
+    var name=nameEl?nameEl.value||('Layer '+(idx+1)):('Layer '+(idx+1));
+    var pdens=parseFloat(document.getElementById('pdens-'+lid).value);
+    var psc=parseFloat(document.getElementById('psc-'+lid).value);
+    var pprice=parseFloat(document.getElementById('pprice-'+lid).value)||0;
+    var hratio=parseFloat(document.getElementById('hratio-'+lid).value)||0;
+    var hdens=parseFloat(document.getElementById('hdens-'+lid).value)||0;
+    var hprice=parseFloat(document.getElementById('hprice-'+lid).value)||0;
+    var tnom=parseFloat(document.getElementById('tnom-'+lid).value)||0;
+    var tmin=parseFloat(document.getElementById('tmin-'+lid).value)||0;
+    var tmax=parseFloat(document.getElementById('tmax-'+lid).value)||0;
+    var thinners=getThinners(lid);
+    if(!pdens||!psc||!tnom){rows+='<tr><td colspan="7" style="color:#DC2626;font-size:12px;padding:10px 1rem">'+name+' — missing density, solid content or dry film thickness</td></tr>';return;}
+    var sc=psc/100;
+    var wetVol=tnom/(sc*1000000)*1000;
+    var consKgM2=wetVol*pdens;
+    var effM2Kg=1/consKgM2;
+    var consKgArea=consKgM2*area;
+    var consGM2=consKgM2*1000;
+    var mixPrice=calcMixPrice(100,pprice||null,hratio,hprice||null,thinners);
+    var priceM2=mixPrice?consKgM2*mixPrice:null;
+    var priceTotalArea=mixPrice?consKgArea*mixPrice:null;
+    var consMin=tmin?(tmin/(sc*1000000)*1000*pdens*1000):null;
+    var consMax=tmax?(tmax/(sc*1000000)*1000*pdens*1000):null;
+    if(priceTotalArea){totalCostSystem+=priceTotalArea;hasSystemCost=true;}
+    systemEfficiency=0;
+    layerResults.push({name:name,consGM2:consGM2,effM2Kg:effM2Kg,consKgArea:consKgArea,mixPrice:mixPrice,priceM2:priceM2,priceTotalArea:priceTotalArea,consMin:consMin,consMax:consMax});
+  });
+  var resHtml='';
+  if(layerResults.length){
+    // Top metrics: efficiency and price per m² per layer
+    resHtml+='<div class="metrics-grid">';
+    layerResults.forEach(function(lr){
+      resHtml+='<div class="metric"><div class="metric-lbl">'+lr.name+' — efficiency</div><div class="metric-val">'+lr.effM2Kg.toFixed(2)+'</div><div class="metric-unit">m²/kg</div></div>';
+      if(lr.priceM2!=null){resHtml+='<div class="metric"><div class="metric-lbl">'+lr.name+' — price</div><div class="metric-val">'+lr.priceM2.toFixed(3)+'</div><div class="metric-unit">€/m²</div></div>';}
+    });
+    resHtml+='</div>';
+    // Table
+    resHtml+='<div class="res-card"><div class="res-card-head"><span class="layer-dot"></span><span>Layer breakdown — consumption per m²</span></div>';
+    resHtml+='<table><thead><tr><th>Layer</th><th>g/m²</th><th>m²/kg</th><th>Mix price</th><th>€/m²</th><th>€ for '+area+' m²</th></tr></thead><tbody>';
+    var totalPriceM2=0;var totalConsGm2=0;var hasCost=false;
+    layerResults.forEach(function(lr){
+      var mp=lr.mixPrice?lr.mixPrice.toFixed(2)+' €/kg':'—';
+      var pm=lr.priceM2!=null?lr.priceM2.toFixed(3):'—';
+      var pa=lr.priceTotalArea!=null?lr.priceTotalArea.toFixed(2):'—';
+      if(lr.priceM2!=null){totalPriceM2+=lr.priceM2;hasCost=true;}
+      totalConsGm2+=lr.consGM2;
+      resHtml+='<tr><td>'+lr.name+'</td><td class="mn">'+lr.consGM2.toFixed(1)+'</td><td class="mn">'+lr.effM2Kg.toFixed(2)+'</td><td class="mn">'+mp+'</td><td class="mn">'+pm+'</td><td class="mn">'+pa+'</td></tr>';
+    });
+    if(layerResults.length>1){
+      resHtml+='<tr class="tr-system"><td>System total</td><td class="mn">'+totalConsGm2.toFixed(1)+'</td><td class="mn">—</td><td class="mn">—</td><td class="mn">'+(hasCost?totalPriceM2.toFixed(3):'—')+'</td><td class="mn">'+(hasCost?(totalPriceM2*area).toFixed(2):'—')+'</td></tr>';
+    }
+    resHtml+='</tbody></table></div>';
+  }
+  document.getElementById('res-content').innerHTML=resHtml;
+  document.getElementById('results').classList.add('on');
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function doPrint(){
+  var el=document.getElementById('print-date');
+  if(el)el.textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  document.querySelectorAll('.layer-body').forEach(function(b){b.style.display='block';});
+  window.print();
+}
+
+addLayer();
+</script>
+</body>
+</html>

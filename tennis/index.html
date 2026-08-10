@@ -1,0 +1,2698 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tenisový turnaj — Project Jan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6D28D9;--pl:#EDE9FE;--pt:#26215C;
+  --o:#C2410C;--ol:#FFF7ED;--ot:#7C2D12;
+  --g:#15803D;--gl:#DCFCE7;--gt:#14532D;
+  --r:#DC2626;--rl:#FEF2F2;
+  --grad:linear-gradient(135deg,#6D28D9 0%,#9333EA 50%,#C2410C 100%);
+  --border:#E5E7EB;--bg:#F9FAFB;--card:#fff;--text:#111827;--muted:#6B7280;--hint:#9CA3AF;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#F3F4F6;color:var(--text);min-height:100vh;padding:1.5rem 1rem 5rem}
+.wrap{max-width:760px;margin:0 auto}
+.back{display:inline-block;font-size:12.5px;color:var(--muted);text-decoration:none;margin-bottom:14px}
+.back:hover{color:var(--p)}
+h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:1.4rem}
+
+.steps{display:flex;gap:8px;margin-bottom:1.4rem}
+.step{flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);font-size:12.5px;font-weight:600;color:var(--hint);cursor:pointer;transition:all .13s}
+.step.on{border-color:var(--p);background:var(--pl);color:var(--pt)}
+.step.done{color:var(--g)}
+.step.locked{cursor:not-allowed;opacity:.6}
+.stepnum{width:20px;height:20px;border-radius:50%;background:var(--border);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.step.on .stepnum{background:var(--p)}
+.step.done .stepnum{background:var(--g)}
+
+.panel{display:none}
+.panel.on{display:block}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:.9rem}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;gap:10px;flex-wrap:wrap}
+.lbl{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--hint)}
+
+textarea{width:100%;min-height:150px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;resize:vertical;line-height:1.5}
+textarea:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.1)}
+.count-row{display:flex;align-items:center;justify-content:space-between;margin-top:9px;font-size:12.5px;color:var(--muted);flex-wrap:wrap;gap:8px}
+.count-badge{font-weight:600;color:var(--pt)}
+.hint-txt{font-size:11.5px;color:var(--hint);margin-top:6px;line-height:1.5}
+
+.btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.bsec{padding:9px 15px;border:1.5px solid var(--border);border-radius:9px;background:var(--card);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .13s}
+.bsec:hover{border-color:var(--p);color:var(--p)}
+.bprim{padding:11px 20px;border:none;border-radius:9px;background:var(--grad);color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .12s}
+.bprim:hover{opacity:.9}
+.bprim:disabled{opacity:.4;cursor:not-allowed}
+.bghost{padding:9px 14px;border:none;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.bghost:hover{color:var(--r)}
+
+.dupwarn{display:none;background:var(--rl);border:1px solid #FECACA;color:var(--r);font-size:12.5px;border-radius:8px;padding:9px 12px;margin-top:9px}
+.dupwarn.on{display:block}
+
+.plist{margin-top:4px}
+.prow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:7px 9px;margin-bottom:6px;transition:opacity .1s}
+.prow.dragging{opacity:.4}
+.drag-handle{cursor:grab;color:var(--hint);touch-action:none;font-size:15px;padding:2px 5px;user-select:none;flex-shrink:0}
+.pidx{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--hint);width:20px;flex-shrink:0;text-align:right}
+input.pname{flex:1;border:none;background:transparent;font-size:13.5px;padding:5px 4px;outline:none;color:var(--text);font-family:inherit;min-width:0}
+input.pname:focus{background:var(--bg);border-radius:6px}
+.pclub{font-size:10.5px;color:var(--muted);background:var(--bg);padding:3px 8px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+.pseed{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;color:var(--pt);background:var(--pl);padding:3px 7px;border-radius:100px;flex-shrink:0}
+.prm{width:24px;height:24px;border:none;background:transparent;color:var(--hint);font-size:16px;cursor:pointer;flex-shrink:0;line-height:1;font-family:inherit}
+.prm:hover{color:var(--r)}
+.plist-empty{font-size:12.5px;color:var(--hint);text-align:center;padding:1.5rem 0}
+
+.modes{display:flex;gap:8px;margin-bottom:.9rem}
+.mb{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .13s}
+.mb.on{border-color:var(--p);background:var(--pl);color:var(--pt)}
+.mb:hover:not(.on){border-color:#C4B5FD}
+
+.gr{display:grid;gap:9px;align-items:end;margin-bottom:9px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+input[type=text],input[type=number],input[type=time],select{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--bg);outline:none}
+input:focus,select:focus{border-color:var(--p);background:#fff}
+
+.vcards{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.vcard{border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .13s}
+.vcard.on{border-color:var(--p);background:var(--pl)}
+.vcard:hover:not(.on){border-color:#C4B5FD}
+.vtop{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;font-weight:700}
+.vsizes{font-size:12px;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace}
+.vmeta{font-size:11.5px;color:var(--hint);margin-top:4px}
+
+.notebox{font-size:12px;color:var(--ot);background:var(--ol);border:1px solid #FED7AA;border-radius:8px;padding:9px 12px;margin-top:9px;line-height:1.5}
+.warnbox{font-size:12.5px;color:var(--r);background:var(--rl);border:1px solid #FECACA;border-radius:8px;padding:9px 12px;margin-top:9px;line-height:1.5}
+
+.timecard{background:var(--pl);border:1px solid #DDD6FE;border-radius:10px;padding:12px 15px;margin-top:10px}
+.timecard .tv{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:var(--pt)}
+.timecard .tl{font-size:11px;color:var(--pt);opacity:.75;margin-top:2px}
+
+.gcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:12px}
+.gcol{background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:9px;min-height:56px;transition:all .13s}
+.gcol.drop-target{border-color:var(--p);background:var(--pl)}
+.gcol h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);margin-bottom:7px;display:flex;justify-content:space-between}
+.pchip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 9px;font-size:12.5px;margin-bottom:5px;cursor:grab;touch-action:none;user-select:none}
+.pchip.dragging{opacity:.35}
+.pchip .pcseed{color:var(--hint);font-family:'JetBrains Mono',monospace;font-size:10.5px;margin-right:4px}
+
+.phase-note{font-size:11.5px;color:var(--hint);text-align:center;margin-top:1.8rem;line-height:1.6}
+.saved-note{font-size:11px;color:var(--g);text-align:right;margin-bottom:8px;min-height:14px}
+.syncbar{display:flex;align-items:center;gap:12px;justify-content:flex-end;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-bottom:12px}
+.syncstatus.online{color:var(--g);font-weight:600}
+.syncstatus.error{color:var(--r);font-weight:600}
+.synctoast{background:var(--pl);border:1px solid #DDD6FE;color:var(--pt);font-size:12px;font-weight:600;border-radius:9px;padding:8px 13px;margin-bottom:12px;text-align:center}
+
+.summarybar{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:.9rem}
+.sitem{flex:1;min-width:110px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+.sitem .sv{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600;color:var(--pt)}
+.sitem .sl{font-size:10.5px;color:var(--hint);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+.rndcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.15rem;margin-bottom:.8rem}
+.rndhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem}
+.rndhd .rt{font-size:13.5px;font-weight:700;color:var(--text)}
+.rndblock{margin-bottom:8px}
+.rndblock:last-child{margin-bottom:0}
+.blocklbl{font-size:10.5px;color:var(--hint);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 5px}
+.mrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:13px;background:var(--bg)}
+.mrow:last-child{margin-bottom:0}
+.mcourt{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;color:var(--pt);background:var(--pl);padding:3px 8px;border-radius:100px;flex-shrink:0;white-space:nowrap}
+.mgrp{font-size:10.5px;font-weight:700;color:var(--muted);flex-shrink:0}
+.mvs{flex:1;font-weight:500}
+.byerow{font-size:11.5px;color:var(--hint);padding:4px 2px}
+.rndempty{font-size:12px;color:var(--hint);font-style:italic}
+
+.mcard{border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--card)}
+.mcard.done{border-color:#A7F3D0}
+.mhead{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer;user-select:none}
+.mhead .mvs{flex:1;font-size:13.5px;font-weight:500}
+.mresult{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:700;color:var(--g);white-space:nowrap}
+.mresult.wo{color:var(--o);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px}
+.mchev{color:var(--hint);font-size:11px;transition:transform .15s;flex-shrink:0}
+.mcard.open .mchev{transform:rotate(180deg)}
+.mbody{display:none;padding:0 14px 14px}
+.mcard.open .mbody{display:block}
+.setrow{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px;padding:8px 0}
+.setrow .snm{font-size:12px;color:var(--muted);width:84px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.setrow .snm.rt{text-align:left}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepbtn{width:38px;height:38px;border-radius:9px;border:1.5px solid var(--border);background:var(--bg);font-size:19px;font-weight:700;color:var(--p);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1}
+.stepbtn:active{background:var(--pl)}
+.stepval{width:26px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700}
+.setlbl{font-size:10px;color:var(--hint);text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-bottom:4px}
+.setinvalid{font-size:11px;color:var(--r);text-align:center;margin-top:-4px;margin-bottom:8px}
+.wobtns{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.wobtn{flex:1;min-width:120px;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;background:var(--card);font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+.wobtn:hover{border-color:var(--o);color:var(--o);background:var(--ol)}
+.wobtn.active{border-color:var(--o);color:var(--ot);background:var(--ol)}
+.clearrow{margin-top:8px;text-align:right}
+
+.stbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:.9rem}
+.stbl-hd{padding:.75rem 1.1rem;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center}
+.stbl-hd span{font-size:12px;font-weight:700}
+table.stbl{width:100%;border-collapse:collapse;font-size:12.5px}
+table.stbl th{padding:7px 10px;text-align:center;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--hint);background:var(--bg);border-bottom:1px solid #F3F4F6}
+table.stbl th:first-child,table.stbl td:first-child{text-align:left;width:34%}
+table.stbl td{padding:8px 10px;text-align:center;border-bottom:1px solid #F9FAFB}
+table.stbl tr.advrow{background:var(--gl)}
+table.stbl tr.wcrow{background:var(--ol)}
+.postag{font-size:9px;font-weight:700;padding:2px 6px;border-radius:100px;margin-left:5px;vertical-align:middle;white-space:nowrap}
+.postag.a{background:var(--g);color:#fff}
+.postag.w{background:#C2410C;color:#fff}
+.whyrow{font-size:10.5px;color:var(--hint);font-style:italic;padding:0 10px 8px}
+.tiezone{border:1.5px dashed var(--r);border-radius:8px;padding:7px 10px;margin:0 10px 10px;background:var(--rl);font-size:11px;color:var(--r)}
+.tiechip{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-size:12px;margin-bottom:4px;cursor:grab;touch-action:none;user-select:none;display:flex;align-items:center;gap:6px}
+.tiechip:last-child{margin-bottom:0}
+.tiechip.dragging{opacity:.4}
+
+.lockbar{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:4px}
+.lockbar .saved-note{margin-bottom:0;flex:1;text-align:left}
+.lockbtn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:100px;border:1.5px solid var(--border);background:var(--card);font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--muted);white-space:nowrap}
+.lockbtn.pin-locked{border-color:#FECACA;background:var(--rl);color:var(--r)}
+.lockbtn.pin-unlocked{border-color:#A7F3D0;background:#ECFDF5;color:var(--g)}
+body.pin-active .lockable{position:relative}
+body.pin-active.pin-is-locked .lockable{opacity:.55;cursor:not-allowed}
+body.pin-active.pin-is-locked .lockable:hover{opacity:.75}
+
+.pinoverlay{display:none;position:fixed;inset:0;background:rgba(15,10,30,.45);z-index:100;align-items:center;justify-content:center;padding:1.2rem}
+.pinoverlay.on{display:flex}
+.pinbox{background:#fff;border-radius:14px;padding:1.4rem;max-width:320px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.pintitle{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px}
+.pinmsg{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.pininput{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:18px;letter-spacing:.15em;text-align:center;font-family:'JetBrains Mono',monospace;outline:none}
+.pininput:focus{border-color:var(--p)}
+.pinerr{font-size:12px;color:var(--r);margin-top:8px;min-height:14px}
+
+.seedrow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:7px 9px;margin-bottom:6px}
+.seedrow.dragging{opacity:.4}
+.seednum{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--hint);width:20px;text-align:right;flex-shrink:0}
+.seedname{flex:1;font-size:13.5px}
+.seedgrp{font-size:10.5px;color:var(--muted);background:var(--bg);padding:3px 8px;border-radius:100px;flex-shrink:0}
+
+.bracket-scroll{overflow-x:auto;margin:0 -1rem;padding:4px 1rem 14px}
+.bracket-cols{display:flex;gap:22px;min-width:min-content}
+.bracket-col{display:flex;flex-direction:column;justify-content:space-around;min-width:190px;flex-shrink:0;gap:16px}
+.bcol-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--hint);text-align:center;margin-bottom:2px}
+.bmatch{border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--card)}
+.bmatch.decided{border-color:#A7F3D0}
+.bplayer{padding:9px 11px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;gap:6px;cursor:pointer;transition:background .12s}
+.bplayer+.bplayer{border-top:1px solid var(--border)}
+.bplayer .bpgrp{font-size:9.5px;color:var(--hint);flex-shrink:0}
+.bplayer:hover:not(.tbd):not(.bye){background:var(--bg)}
+.bplayer.winner{background:var(--gl);font-weight:700;color:var(--gt)}
+.bplayer.loser{opacity:.5;text-decoration:line-through;cursor:pointer}
+.bplayer.tbd{color:var(--hint);font-style:italic;cursor:default}
+.bplayer.bye{color:var(--hint);font-style:italic;cursor:default;background:var(--bg)}
+.b3rd{margin-top:18px}
+
+.finalcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:.8rem}
+.finalrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #F3F4F6}
+.finalrow:last-child{border-bottom:none}
+.finalpos{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--pt);width:34px;flex-shrink:0}
+.finalname{flex:1;font-size:14px;font-weight:500}
+.finalgrp{font-size:11px;color:var(--hint)}
+.finalnote{font-size:11px;color:var(--hint);margin-top:2px}
+
+.printarea{display:none}
+@media print{
+  body{background:#fff!important;padding:0!important}
+  .wrap,.pinoverlay,.lockbar{display:none!important}
+  .printarea{display:block!important;color:#000;padding:0}
+  .printarea h1{font-size:19px;margin-bottom:2px}
+  .printarea .psub{font-size:11px;color:#444;margin-bottom:18px}
+  .printarea h2{font-size:15px;margin:20px 0 8px;border-bottom:2px solid #000;padding-bottom:3px;page-break-after:avoid}
+  .printarea h3{font-size:12.5px;margin:12px 0 5px;page-break-after:avoid}
+  .printarea table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px;page-break-inside:avoid}
+  .printarea th,.printarea td{border:1px solid #999;padding:4px 6px;text-align:left}
+  .printarea .pmatchline{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dotted #999;font-size:11.5px}
+  .printarea .pscoreblank{font-family:monospace;letter-spacing:1px;white-space:nowrap}
+  .printarea .ppagebreak{page-break-before:always}
+  .printarea .pgroupblock{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../">‹ Project Jan</a>
+  <h1>Turnajový generátor</h1>
+  <div class="sub">Skupiny, rozpis zápasů a pavouk pro klubový tenisový turnaj</div>
+
+  <div class="lockbar">
+    <div class="saved-note" id="savedNote"></div>
+    <button class="bghost" id="pinChangeBtn" type="button" style="display:none;padding:0;font-size:11.5px">Změnit PIN</button>
+    <button class="lockbtn" id="lockBtn" type="button"></button>
+  </div>
+
+  <div class="syncbar">
+    <span class="syncstatus" id="syncStatus">☁️ Lokálně (bez cloudu)</span>
+    <button class="bghost lockable" id="createRemoteBtn" type="button" style="padding:0">Založit online turnaj</button>
+    <button class="bghost" id="copyLinkBtn" type="button" style="display:none;padding:0">Kopírovat odkaz</button>
+    <button class="bghost lockable" id="disconnectRemoteBtn" type="button" style="display:none;padding:0">Odpojit cloud</button>
+  </div>
+  <div class="synctoast" id="syncToast" style="display:none"></div>
+
+  <div class="steps">
+    <div class="step on" data-step="1" id="tabStep1"><span class="stepnum">1</span>Import hráčů</div>
+    <div class="step locked" data-step="2" id="tabStep2"><span class="stepnum">2</span>Nastavení skupin</div>
+    <div class="step locked" data-step="3" id="tabStep3"><span class="stepnum">3</span>Rozpis zápasů</div>
+    <div class="step locked" data-step="4" id="tabStep4"><span class="stepnum">4</span>Výsledky</div>
+    <div class="step locked" data-step="5" id="tabStep5"><span class="stepnum">5</span>Pavouk</div>
+    <div class="step" data-step="6" id="tabStep6"><span class="stepnum">6</span>Export</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <section id="step1" class="panel on">
+    <div class="card lockable">
+      <div class="card-hd"><span class="lbl">Vlož jména hráčů</span></div>
+      <textarea id="importTa" placeholder="Jedno jméno na řádek…&#10;&#10;Jan Novák&#10;Petr Svoboda&#10;Tomáš Dvořák&#10;&#10;Funguje i vložení z Excelu (jméno [TAB] klub [TAB] nasazení).">
+</textarea>
+      <div class="count-row">
+        <span><span class="count-badge" id="liveCount">0</span> řádků rozpoznáno</span>
+        <button class="bghost" id="clearTaBtn" style="padding:0">Vymazat textové pole</button>
+      </div>
+      <div class="hint-txt">Číslování na začátku řádku (1., 2), -, •) se automaticky odstraní.</div>
+      <div class="btnrow">
+        <button class="bprim" id="processBtn">Zpracovat seznam ↓</button>
+      </div>
+    </div>
+
+    <div class="card lockable">
+      <div class="card-hd">
+        <span class="lbl">Seznam hráčů (<span id="plCount">0</span>)</span>
+        <div class="btnrow" style="margin:0">
+          <button class="bsec" id="shuffleBtn">🔀 Zamíchat</button>
+          <button class="bsec" id="addRowBtn">+ Přidat hráče</button>
+        </div>
+      </div>
+      <div class="dupwarn" id="dupWarn"></div>
+      <div class="plist" id="plist"></div>
+      <div class="plist-empty" id="plistEmpty">Zatím žádní hráči — vlož jména nahoře a klikni na „Zpracovat seznam“.</div>
+      <div class="hint-txt">Přetažením za ⠿ změníš pořadí — to zároveň určuje pořadí nasazení.</div>
+    </div>
+
+    <div class="btnrow" style="justify-content:flex-end">
+      <button class="bghost lockable" id="resetBtn">Nový turnaj (smazat vše)</button>
+      <button class="bprim" id="toStep2Btn">Pokračovat k nastavení skupin →</button>
+    </div>
+    <div class="warnbox" id="minPlayersWarn" style="display:none">Potřeba alespoň 3 hráči pro pokračování.</div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section id="step2" class="panel">
+    <div class="card lockable">
+      <div class="card-hd"><span class="lbl">Rozdělení do skupin</span></div>
+      <div class="modes">
+        <button class="mb on" id="modeCountBtn">Podle počtu skupin</button>
+        <button class="mb" id="modeSizeBtn">Podle hráčů ve skupině</button>
+      </div>
+      <div class="gr g2">
+        <div>
+          <label id="valueLbl">Počet skupin</label>
+          <input type="number" id="valueInput" min="2" value="4">
+        </div>
+        <div></div>
+      </div>
+      <div class="vcards" id="vcards"></div>
+      <div class="notebox" id="unevenNote" style="display:none"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span class="lbl">Časová kalkulačka</span></div>
+      <div class="gr g3">
+        <div><label>Počet kurtů</label><input type="number" id="courtsInput" min="1" value="2"></div>
+        <div><label>Délka zápasu (min)</label><input type="number" id="durInput" min="5" value="25"></div>
+        <div><label>Začátek (nepovinné)</label><input type="time" id="startInput"></div>
+      </div>
+      <div class="timecard">
+        <div class="tv" id="timeEstimate">—</div>
+        <div class="tl" id="timeEstimateSub">celková délka skupinové fáze</div>
+      </div>
+      <div class="warnbox" id="nextDayWarn" style="display:none"></div>
+    </div>
+
+    <div class="card lockable">
+      <div class="card-hd">
+        <span class="lbl">Nasazení do skupin</span>
+        <div class="btnrow" style="margin:0">
+          <button class="bsec" id="reshuffleSeedBtn" style="display:none">🔁 Přeskupit</button>
+        </div>
+      </div>
+      <div class="modes">
+        <button class="mb on" id="seedSnakeBtn">Hadí systém</button>
+        <button class="mb" id="seedRandomBtn">Náhodně</button>
+        <button class="mb" id="seedManualBtn">Ručně</button>
+      </div>
+      <div class="hint-txt" id="seedHint">Nejvýše nasazení hráči (dle pořadí ze seznamu) se rozprostřou rovnoměrně do všech skupin.</div>
+      <div class="gcols" id="gcols"></div>
+    </div>
+
+    <div class="btnrow" style="justify-content:space-between">
+      <button class="bsec" id="backTo1Btn">← Zpět na import</button>
+      <div class="btnrow" style="margin:0">
+        <button class="bghost lockable" id="resetBtn2">Nový turnaj (smazat vše)</button>
+        <button class="bprim" id="toStep3Btn">Pokračovat k rozpisu zápasů →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section id="step3" class="panel">
+    <div class="card">
+      <div class="card-hd"><span class="lbl">Rozpis zápasů</span>
+        <div class="btnrow" style="margin:0">
+          <button class="bsec lockable" id="regenScheduleBtn">🔁 Aktualizovat podle skupin</button>
+        </div>
+      </div>
+      <div class="gr g2">
+        <div><label>Počet kurtů</label><input type="number" id="courtsInput3" min="1" value="2"></div>
+        <div><label>Délka zápasu (min)</label><input type="number" id="durInput3" min="5" value="25"></div>
+      </div>
+      <div class="summarybar">
+        <div class="sitem"><div class="sv" id="sumMatches">—</div><div class="sl">zápasů</div></div>
+        <div class="sitem"><div class="sv" id="sumRounds">—</div><div class="sl">kol</div></div>
+        <div class="sitem"><div class="sv" id="sumTime">—</div><div class="sl">odhad délky</div></div>
+      </div>
+      <div class="warnbox" id="nextDayWarn3" style="display:none"></div>
+    </div>
+
+    <div id="roundsBox"></div>
+
+    <div class="btnrow" style="justify-content:space-between">
+      <button class="bsec" id="backTo2Btn">← Zpět na skupiny</button>
+      <div class="btnrow" style="margin:0">
+        <button class="bghost lockable" id="resetBtn3">Nový turnaj (smazat vše)</button>
+        <button class="bprim" id="toStep4Btn">Pokračovat k výsledkům →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section id="step4" class="panel">
+    <div class="card lockable">
+      <div class="card-hd"><span class="lbl">Formát skóre a postup</span></div>
+      <div class="gr g3">
+        <div>
+          <label>Formát skóre</label>
+          <select id="scoreFormatSel">
+            <option value="1set">1 set do 6</option>
+            <option value="proset">Pro-set do 9</option>
+            <option value="2setTb">2 sety + supertiebreak</option>
+          </select>
+        </div>
+        <div><label>Postupují (z každé skupiny)</label><input type="number" id="advanceInput" min="1" value="2"></div>
+        <div><label>+ nejlepší 3. místa</label><input type="number" id="wildcardInput" min="0" value="0"></div>
+      </div>
+      <div class="hint-txt">Řazení v tabulce: výhry → vzájemný zápas → poměr setů → poměr gamů. Pokud se shoda nedá rozřešit, necháme rozhodnout tebe.</div>
+    </div>
+
+    <div class="modes">
+      <button class="mb on" id="viewMatchesBtn">Zápasy</button>
+      <button class="mb" id="viewStandingsBtn">Tabulky</button>
+    </div>
+
+    <div id="resultsMatchesView"></div>
+    <div id="resultsStandingsView" style="display:none"></div>
+
+    <div class="btnrow" style="justify-content:space-between">
+      <button class="bsec" id="backTo3Btn">← Zpět na rozpis</button>
+      <div class="btnrow" style="margin:0">
+        <button class="bghost lockable" id="resetBtn4">Nový turnaj (smazat vše)</button>
+        <button class="bprim" id="toStep5Btn">Pokračovat k pavouku →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section id="step5" class="panel">
+    <div id="bracketSeedingCard" class="card lockable">
+      <div class="card-hd"><span class="lbl">Nasazení do pavouka</span></div>
+      <div class="hint-txt">Podle umístění ve skupinách (1. místa nejvýš, pak 2. místa atd.; nejlepší 3. místa podle poměru výher/gamů). Přetažením pořadí uprav ručně, než pavouk spustíš.</div>
+      <div class="plist" id="bracketSeedList" style="margin-top:10px"></div>
+      <div class="warnbox" id="bracketSeedWarn" style="display:none"></div>
+      <div class="btnrow">
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);font-weight:500;margin:0 auto 0 0">
+          <input type="checkbox" id="thirdPlaceChk" checked style="width:16px;height:16px"> Zápas o 3. místo
+        </label>
+        <button class="bprim" id="startBracketBtn">Spustit pavouk →</button>
+      </div>
+    </div>
+
+    <div id="bracketPlayedCard" style="display:none">
+      <div class="modes">
+        <button class="mb on" id="viewMainBracketBtn">Hlavní pavouk</button>
+        <button class="mb" id="viewConsBracketBtn">Pavouk útěchy</button>
+        <button class="mb" id="viewFinalResultsBtn">Výsledky</button>
+      </div>
+      <div id="mainBracketView"></div>
+      <div id="consBracketView" style="display:none"></div>
+      <div id="finalResultsView" style="display:none"></div>
+      <div class="btnrow">
+        <button class="bsec lockable" id="editSeedingBtn">← Upravit nasazení</button>
+        <button class="bghost lockable" id="regenBracketBtn">Znovu vygenerovat pavouk</button>
+      </div>
+    </div>
+
+    <div class="btnrow" style="justify-content:space-between">
+      <button class="bsec" id="backTo4Btn">← Zpět na výsledky</button>
+      <div class="btnrow" style="margin:0">
+        <button class="bghost lockable" id="resetBtn5">Nový turnaj (smazat vše)</button>
+        <button class="bprim" id="toStep6Btn">Pokračovat k exportu →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 6 -->
+  <section id="step6" class="panel">
+    <div class="card">
+      <div class="card-hd"><span class="lbl">Tisk / PDF</span></div>
+      <div class="hint-txt">Vytiskne skupiny s rozpisem a pavouk (podle toho, co je zatím k dispozici) na A4.</div>
+      <div class="btnrow">
+        <button class="bsec" id="printFullBtn">🖨️ Vytisknout aktuální stav</button>
+        <button class="bsec" id="printBlankBtn">📄 Prázdná verze k ručnímu zápisu</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span class="lbl">Pavouk jako obrázek</span></div>
+      <div class="hint-txt">Stáhne aktuální hlavní pavouk jako PNG — pro sdílení do WhatsApp skupiny klubu apod.</div>
+      <div class="btnrow">
+        <button class="bsec" id="exportPngBtn">🖼️ Stáhnout PNG pavouka</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span class="lbl">Záloha turnaje</span></div>
+      <div class="hint-txt">Kompletní stav turnaje jako JSON — hráči, skupiny, rozpis, výsledky i pavouk. Funguje jako záloha i jako způsob „ulož a pokračuj jinde“.</div>
+      <div class="btnrow">
+        <button class="bsec" id="exportJsonBtn">⬇️ Stáhnout zálohu (JSON)</button>
+        <button class="bsec lockable" id="importJsonBtn">⬆️ Nahrát zálohu</button>
+        <input type="file" id="importJsonFile" accept="application/json" style="display:none">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span class="lbl">Výsledky jako CSV</span></div>
+      <div class="hint-txt">Tabulka všech zápasů a skóre — pro Excel / Google Sheets.</div>
+      <div class="btnrow">
+        <button class="bsec" id="exportCsvBtn">⬇️ Stáhnout CSV</button>
+      </div>
+    </div>
+
+    <div class="btnrow" style="justify-content:space-between">
+      <button class="bsec" id="backTo5Btn">← Zpět na pavouk</button>
+      <button class="bghost lockable" id="resetBtn6">Nový turnaj (smazat vše)</button>
+    </div>
+
+    <div class="phase-note">Fáze 5 z vývoje: import, skupiny, rozpis, výsledky, pavouk a export — celé MVP mimo Supabase. Živý zápis přes síť, PIN pro zápis od více lidí a promítání na displej (`/tennis/display`) budou navazovat v poslední fázi.</div>
+  </section>
+</div>
+
+<div id="printArea" class="printarea"></div>
+
+<div class="pinoverlay" id="pinOverlay">
+  <div class="pinbox">
+    <div class="pintitle" id="pinTitle">Odemknout úpravy</div>
+    <div class="pinmsg" id="pinMsg"></div>
+    <input type="text" inputmode="numeric" class="pininput" id="pinInput" placeholder="PIN" autocomplete="off">
+    <div class="pinerr" id="pinErr"></div>
+    <div class="btnrow" style="justify-content:flex-end;margin-top:14px">
+      <button class="bghost" id="pinCancelBtn" type="button">Zrušit</button>
+      <button class="bprim" id="pinConfirmBtn" type="button">Odemknout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var STORE_KEY = 'tennisDraftV1';
+var MIN_PLAYERS = 3;
+
+var state = {
+  step: 1,
+  players: [],
+  groupConfig: { mode:'count', value:4, groupCount:4, sizes:[], seeding:'snake', courts:2, matchDuration:25, startTime:'' },
+  groups: [],
+  schedule: { sig:null, rounds:[] },
+  resultsConfig: { format:'1set', advancePerGroup:2, advanceWildcards:0 },
+  results: {},
+  tieOverrides: {},
+  security: { pin:null },
+  bracketSeeding: { order:null },
+  bracket: null
+};
+
+function uid(){ return 'p'+Math.random().toString(36).slice(2,10); }
+
+// load persisted state immediately, before any code below aliases
+// sub-objects of `state` (e.g. `var gc = state.groupConfig`) — otherwise
+// those aliases keep pointing at the pre-load defaults after loadState()
+// replaces the object references.
+loadState();
+
+// locked-by-default whenever a PIN has been configured — every fresh page
+// load requires re-entering it, so leaving the tab/device doesn't leave
+// structural settings open to whoever picks it up next.
+var unlocked = !state.security.pin;
+
+// ---------- Supabase sync (base wiring — no realtime/conflict detection yet) ----------
+var SUPABASE_URL = 'https://fnvhmawvotswsfmippen.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_be5nCXmVn41p2PvjGEkyPQ_STkYza2A';
+var sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+var REMOTE_KEY = 'tennisRemoteV1';
+var remote = { id: null };
+(function loadRemoteRef(){
+  try{
+    var raw = localStorage.getItem(REMOTE_KEY);
+    if(raw){ var parsed = JSON.parse(raw); if(parsed && parsed.id) remote.id = parsed.id; }
+  }catch(e){}
+})();
+function saveRemoteRef(){
+  try{ localStorage.setItem(REMOTE_KEY, JSON.stringify(remote)); }catch(e){}
+}
+function setSyncStatus(kind, text){
+  var el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.className = 'syncstatus'+(kind?(' '+kind):'');
+  el.textContent = text;
+}
+function updateSyncUI(){
+  var createBtn=document.getElementById('createRemoteBtn');
+  var copyBtn=document.getElementById('copyLinkBtn');
+  var discBtn=document.getElementById('disconnectRemoteBtn');
+  if(!createBtn) return;
+  if(remote.id){
+    createBtn.style.display='none';
+    copyBtn.style.display='inline-block';
+    discBtn.style.display='inline-block';
+  } else {
+    createBtn.style.display='inline-block';
+    copyBtn.style.display='none';
+    discBtn.style.display='none';
+  }
+}
+function urlForTournament(id){
+  var url = new URL(location.href);
+  url.searchParams.set('id', id);
+  return url.toString();
+}
+var lastPushNonce = null;
+function pushRemote(){
+  if(!sb || !remote.id) return;
+  var nonce = Math.random().toString(36).slice(2)+Date.now().toString(36);
+  lastPushNonce = nonce;
+  var payload = Object.assign({}, state, { _syncNonce: nonce });
+  setSyncStatus('', '☁️ Ukládám…');
+  sb.from('tournaments').update({ data: payload }).eq('id', remote.id).then(function(res){
+    if(res.error) setSyncStatus('error', '⚠️ Sync selhal — zkontroluj připojení');
+    else setSyncStatus('online', '☁️ Online — uloženo');
+  }).catch(function(){
+    setSyncStatus('error', '⚠️ Sync selhal — zkontroluj připojení');
+  });
+}
+
+// ---------- realtime ----------
+var realtimeChannel = null;
+function subscribeRealtime(){
+  if(!sb || !remote.id || realtimeChannel) return;
+  realtimeChannel = sb.channel('tournament-'+remote.id)
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'tournaments', filter:'id=eq.'+remote.id }, function(payload){
+      applyRemoteUpdate(payload.new && payload.new.data);
+    })
+    .subscribe();
+}
+function unsubscribeRealtime(){
+  if(realtimeChannel && sb){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
+}
+function diffResultIds(oldResults, newResults){
+  var changed=[];
+  Object.keys(newResults||{}).forEach(function(mid){
+    if(JSON.stringify(oldResults[mid])!==JSON.stringify(newResults[mid])) changed.push(mid);
+  });
+  return changed;
+}
+function showUpdateNotice(count){
+  var el=document.getElementById('syncToast');
+  if(!el) return;
+  el.textContent = '🔄 Aktualizace od jiného zařízení ('+count+' '+(count===1?'zápas':(count<5?'zápasy':'zápasů'))+')';
+  el.style.display='block';
+  clearTimeout(el._t);
+  el._t=setTimeout(function(){ el.style.display='none'; }, 4000);
+}
+function rerenderCurrentStep(){
+  renderPlayerList();
+  renderDupWarn();
+  updateTabs();
+  if(state.step===2){ renderStep2(); setSeedingUiOnly(gc.seeding); }
+  if(state.step===3){ renderStep3(); }
+  if(state.step===4){
+    document.getElementById('advanceInput').value = state.resultsConfig.advancePerGroup;
+    document.getElementById('wildcardInput').value = state.resultsConfig.advanceWildcards;
+    document.getElementById('scoreFormatSel').value = state.resultsConfig.format;
+    showResultsView(currentResultsView);
+  }
+  if(state.step===5){ renderStep5(); }
+}
+function applyRemoteUpdate(incoming){
+  if(!incoming || typeof incoming!=='object' || !Array.isArray(incoming.players)) return;
+  if(incoming._syncNonce && incoming._syncNonce===lastPushNonce) return; // echo of our own write
+  var changedMatchIds = diffResultIds(state.results, incoming.results||{});
+  // deliberately NOT touching state.step or `unlocked` — a change from
+  // another device shouldn't yank this device's navigation around or
+  // re-lock a screen someone's mid-edit on.
+  state.players = incoming.players || [];
+  Object.assign(state.groupConfig, incoming.groupConfig || {});
+  state.groups = incoming.groups || [];
+  state.schedule = incoming.schedule || { sig:null, rounds:[] };
+  Object.assign(state.resultsConfig, incoming.resultsConfig || {});
+  state.results = incoming.results || {};
+  state.tieOverrides = incoming.tieOverrides || {};
+  state.bracketSeeding = incoming.bracketSeeding || { order:null };
+  state.bracket = incoming.bracket || null;
+  if(incoming.security) state.security.pin = incoming.security.pin || null;
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+  rerenderCurrentStep();
+  if(changedMatchIds.length) showUpdateNotice(changedMatchIds.length);
+}
+
+document.getElementById('createRemoteBtn').addEventListener('click', function(){
+  if(!sb){ alert('Supabase klient se nenačetl — zkontroluj připojení k internetu a zkus obnovit stránku.'); return; }
+  if(!isPinSet()){ alert('Nejdřív si nahoře nastav PIN organizátora (🔓 Nastavit PIN) — použije se i jako PIN pro online zápis.'); return; }
+  setSyncStatus('', '☁️ Zakládám turnaj…');
+  sb.from('tournaments').insert({ pin: state.security.pin, data: state }).select().single().then(function(res){
+    if(res.error || !res.data){ setSyncStatus('error', '⚠️ Založení se nepovedlo — zkus to znovu.'); return; }
+    remote.id = res.data.id;
+    saveRemoteRef();
+    history.replaceState(null, '', urlForTournament(remote.id));
+    updateSyncUI();
+    setSyncStatus('online', '☁️ Online — turnaj založen');
+    subscribeRealtime();
+  }).catch(function(){
+    setSyncStatus('error', '⚠️ Založení se nepovedlo — zkus to znovu.');
+  });
+});
+document.getElementById('copyLinkBtn').addEventListener('click', function(){
+  navigator.clipboard.writeText(location.href).then(function(){
+    var btn=document.getElementById('copyLinkBtn');
+    var origTxt=btn.textContent;
+    btn.textContent='Zkopírováno ✓';
+    setTimeout(function(){ btn.textContent=origTxt; }, 1500);
+  });
+});
+document.getElementById('disconnectRemoteBtn').addEventListener('click', function(){
+  if(!confirm('Odpojit tento turnaj od cloudu? Data zůstanou uložená lokálně v tomto prohlížeči, ale přestanou se synchronizovat.')) return;
+  unsubscribeRealtime();
+  remote.id=null;
+  saveRemoteRef();
+  var url = new URL(location.href);
+  url.searchParams.delete('id');
+  history.replaceState(null, '', url.toString());
+  updateSyncUI();
+  setSyncStatus('', '☁️ Lokálně (bez cloudu)');
+});
+
+// ---------- persistence ----------
+var saveTimer=null;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveNow, 250);
+}
+function saveNow(){
+  clearTimeout(saveTimer);
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    var n=document.getElementById('savedNote');
+    n.textContent='Uloženo do prohlížeče ✓';
+    clearTimeout(n._t);
+    n._t=setTimeout(function(){ n.textContent=''; },1800);
+  }catch(e){}
+  pushRemote();
+}
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    var loaded = JSON.parse(raw);
+    if(loaded && typeof loaded==='object'){
+      state = Object.assign(state, loaded);
+    }
+  }catch(e){}
+}
+
+// ---------- import parsing ----------
+function stripNumbering(line){
+  return line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/, '').trim();
+}
+function liveCount(text){
+  return text.split(/\r?\n/).filter(function(l){ return l.trim().length>0; }).length;
+}
+function parseImportText(text){
+  var rawLines = text.split(/\r?\n/);
+  var players = [];
+  rawLines.forEach(function(raw){
+    if(!raw.trim()) return;
+    var name, club=null, seed=null;
+    if(raw.indexOf('\t')>=0){
+      var cols = raw.split('\t').map(function(c){ return c.trim(); });
+      name = stripNumbering(cols[0]||'');
+      club = cols[1] ? cols[1] : null;
+      if(cols[2]){
+        var n = parseInt(cols[2].replace(/[^\d]/g,''),10);
+        if(!isNaN(n)) seed = n;
+      }
+    } else {
+      name = stripNumbering(raw);
+    }
+    name = (name||'').trim();
+    if(!name) return;
+    players.push({ id: uid(), name: name, club: club, seed: seed });
+  });
+  var anySeed = players.some(function(p){ return p.seed!=null; });
+  if(anySeed){
+    players.forEach(function(p,i){ p._o=i; });
+    players.sort(function(a,b){
+      if(a.seed==null && b.seed==null) return a._o-b._o;
+      if(a.seed==null) return 1;
+      if(b.seed==null) return -1;
+      return a.seed-b.seed;
+    });
+    players.forEach(function(p){ delete p._o; });
+  }
+  return players;
+}
+function findDuplicateNames(players){
+  var map={};
+  players.forEach(function(p){
+    var k=p.name.trim().toLowerCase();
+    map[k]=(map[k]||0)+1;
+  });
+  return Object.keys(map).filter(function(k){ return map[k]>1; });
+}
+
+// ---------- round-robin schedule ----------
+function roundRobinRounds(n){
+  var players=[]; for(var i=0;i<n;i++) players.push(i);
+  var hasBye = n%2!==0;
+  if(hasBye) players.push(-1);
+  var m=players.length;
+  if(m<2) return { rounds:[], byes:[], totalRounds:0 };
+  var totalRounds=m-1;
+  var arr=players.slice();
+  var rounds=[], byes=[];
+  for(var r=0;r<totalRounds;r++){
+    var pairs=[], bye=null;
+    for(var k=0;k<m/2;k++){
+      var a=arr[k], b=arr[m-1-k];
+      if(a===-1) bye=b;
+      else if(b===-1) bye=a;
+      else pairs.push([a,b]);
+    }
+    rounds.push(pairs);
+    byes.push(bye);
+    var fixed=arr[0], rest=arr.slice(1);
+    rest.unshift(rest.pop());
+    arr=[fixed].concat(rest);
+  }
+  return { rounds:rounds, byes:byes, totalRounds:totalRounds };
+}
+function groupsSignature(groups){
+  return groups.map(function(g){ return g.join(','); }).join('|');
+}
+function buildSchedule(){
+  var groups = state.groups;
+  var byId={}; state.players.forEach(function(p){ byId[p.id]=p; });
+  var perGroup = groups.map(function(ids){ return roundRobinRounds(ids.length); });
+  var maxRounds = perGroup.reduce(function(m,g){ return Math.max(m,g.totalRounds); },0);
+  var rounds=[];
+  for(var r=0;r<maxRounds;r++){
+    var matches=[], byes=[];
+    groups.forEach(function(ids, gi){
+      var letter=String.fromCharCode(65+gi);
+      var g=perGroup[gi];
+      if(r<g.rounds.length){
+        g.rounds[r].forEach(function(pair){
+          var home=byId[ids[pair[0]]], away=byId[ids[pair[1]]];
+          if(!home||!away) return;
+          matches.push({ id:'g'+gi+'-r'+r+'-'+pair[0]+'-'+pair[1], group:letter, home:home, away:away });
+        });
+        if(g.byes[r]!=null && byId[ids[g.byes[r]]]){
+          byes.push({ group:letter, player: byId[ids[g.byes[r]]] });
+        }
+      }
+    });
+    rounds.push({ matches:matches, byes:byes });
+  }
+  return rounds;
+}
+function assignCourts(matches, courts){
+  courts=Math.max(1, courts||1);
+  var blocks=[];
+  for(var i=0;i<matches.length;i+=courts){
+    blocks.push(matches.slice(i,i+courts));
+  }
+  return blocks;
+}
+
+// ---------- group math ----------
+function evenSplit(n,g){
+  var base=Math.floor(n/g), rem=n%g, sizes=[];
+  for(var i=0;i<g;i++) sizes.push(base+(i<rem?1:0));
+  return sizes;
+}
+function matchesForSizes(sizes){
+  return sizes.reduce(function(s,sz){ return s+ sz*(sz-1)/2; },0);
+}
+function computeVariants(n, mode, value){
+  var centerG;
+  if(mode==='count'){
+    centerG = Math.max(2, Math.round(value));
+  } else {
+    centerG = Math.max(2, Math.round(n/Math.max(1,value)));
+  }
+  var maxG = Math.max(2, Math.floor(n/2));
+  // clamp first — for small n, centerG's neighborhood can fall entirely
+  // outside [2, maxG] (e.g. n=5 → maxG=2, but the default centerG=4),
+  // which used to leave `candidates` empty and crash renderVariants().
+  centerG = Math.min(Math.max(centerG, 2), maxG);
+  var candidates = [];
+  [centerG-1, centerG, centerG+1, centerG+2].forEach(function(g){
+    if(g>=2 && g<=maxG && candidates.indexOf(g)===-1) candidates.push(g);
+  });
+  candidates.sort(function(a,b){ return Math.abs(a-centerG)-Math.abs(b-centerG) || a-b; });
+  var variants = candidates.slice(0,4).map(function(g){
+    var sizes = evenSplit(n,g);
+    return { g:g, sizes:sizes, matches: matchesForSizes(sizes) };
+  });
+  variants.sort(function(a,b){ return a.g-b.g; });
+  return variants;
+}
+function snakeAssign(n, sizes){
+  var G=sizes.length, cap=sizes.slice(), groups=[];
+  for(var i=0;i<G;i++) groups.push([]);
+  var g=0, dir=1, guard=0;
+  for(var i2=0;i2<n;i2++){
+    while(cap[g]<=0 && guard<10000){ g+=dir; if(g>=G){g=G-1;dir=-1;} else if(g<0){g=0;dir=1;} guard++; }
+    groups[g].push(i2); cap[g]--;
+    g+=dir;
+    if(g>=G){g=G-1;dir=-1;} else if(g<0){g=0;dir=1;}
+  }
+  return groups;
+}
+function randomAssign(n, sizes){
+  var idx=[]; for(var i=0;i<n;i++) idx.push(i);
+  for(var j=idx.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var t=idx[j]; idx[j]=idx[k]; idx[k]=t; }
+  var groups=[], pos=0;
+  sizes.forEach(function(sz){ groups.push(idx.slice(pos,pos+sz)); pos+=sz; });
+  return groups;
+}
+function fmtSizes(sizes){ return sizes.join(' + '); }
+function fmtMinutes(min){
+  min=Math.round(min);
+  var h=Math.floor(min/60), m=min%60;
+  if(h<=0) return m+' min';
+  return h+' h '+(m?m+' min':'').trim();
+}
+
+// ---------- results: score validation ----------
+function isValidSet(h,a){
+  if(h==null||a==null||isNaN(h)||isNaN(a)) return false;
+  if(h===a) return false;
+  var w=Math.max(h,a), l=Math.min(h,a);
+  if(w===6 && l<=4) return true;
+  if(w===7 && (l===5||l===6)) return true;
+  return false;
+}
+function isValidProSet(h,a){
+  if(h==null||a==null||isNaN(h)||isNaN(a)) return false;
+  if(h===a) return false;
+  var w=Math.max(h,a), l=Math.min(h,a);
+  return w>=9 && (w-l)>=2;
+}
+function isValidTiebreak(h,a){
+  if(h==null||a==null||isNaN(h)||isNaN(a)) return false;
+  if(h===a) return false;
+  var w=Math.max(h,a), l=Math.min(h,a);
+  return w>=10 && (w-l)>=2;
+}
+function segValidator(format, idx){
+  if(format==='proset') return isValidProSet;
+  if(format==='2setTb' && idx===2) return isValidTiebreak;
+  return isValidSet;
+}
+function computeMatchOutcome(match, result, format){
+  if(!result || !result.status) return { winnerId:null, played:false };
+  if(result.status==='wo' || result.status==='ret'){
+    return { winnerId: result.winnerId||null, played: !!result.winnerId, special: result.status };
+  }
+  var sets = result.sets||[];
+  if(format==='2setTb'){
+    var s1=sets[0], s2=sets[1];
+    if(!s1 || !isValidSet(s1[0],s1[1]) || !s2 || !isValidSet(s2[0],s2[1])) return { winnerId:null, played:false };
+    var w1 = s1[0]>s1[1]?'h':'a', w2 = s2[0]>s2[1]?'h':'a';
+    if(w1===w2) return { winnerId: w1==='h'?match.home.id:match.away.id, played:true };
+    var tb=sets[2];
+    if(!tb || !isValidTiebreak(tb[0],tb[1])) return { winnerId:null, played:false };
+    return { winnerId: tb[0]>tb[1]?match.home.id:match.away.id, played:true };
+  }
+  var validator = format==='proset' ? isValidProSet : isValidSet;
+  var s=sets[0];
+  if(!s || !validator(s[0],s[1])) return { winnerId:null, played:false };
+  return { winnerId: s[0]>s[1]?match.home.id:match.away.id, played:true };
+}
+function flattenMatches(){
+  var all=[];
+  state.schedule.rounds.forEach(function(round, ri){
+    round.matches.forEach(function(m){ var m2={}; for(var k in m) m2[k]=m[k]; m2.roundIndex=ri; all.push(m2); });
+  });
+  return all;
+}
+
+// ---------- results: standings & tie-breaks ----------
+function ratioKey(won,lost){ return lost>0 ? won/lost : (won>0 ? Infinity : 0); }
+function splitByKey(cluster, keyFn){
+  var sorted = cluster.slice().sort(function(a,b){ return keyFn(b)-keyFn(a); });
+  var groups=[], i=0;
+  while(i<sorted.length){
+    var j=i+1;
+    while(j<sorted.length && keyFn(sorted[j])===keyFn(sorted[i])) j++;
+    groups.push(sorted.slice(i,j));
+    i=j;
+  }
+  return groups;
+}
+function miniHeadToHeadWins(cluster, matches){
+  var ids = cluster.map(function(p){ return p.id; });
+  var wins={}; cluster.forEach(function(p){ wins[p.id]=0; });
+  matches.forEach(function(m){
+    if(ids.indexOf(m.home.id)===-1 || ids.indexOf(m.away.id)===-1) return;
+    var outcome = computeMatchOutcome(m, state.results[m.id], state.resultsConfig.format);
+    if(!outcome.played) return;
+    if(wins[outcome.winnerId]!=null) wins[outcome.winnerId]++;
+  });
+  return wins;
+}
+function computeGroupStandingsData(groupLetter){
+  var matches = flattenMatches().filter(function(m){ return m.group===groupLetter; });
+  var byId={}; state.players.forEach(function(p){ byId[p.id]=p; });
+  var idx = state.groups[groupLetter.charCodeAt(0)-65] || [];
+  var stats={};
+  function ensure(p){ if(!stats[p.id]) stats[p.id]={ player:p, wins:0, losses:0, played:0, setsWon:0, setsLost:0, gamesWon:0, gamesLost:0 }; return stats[p.id]; }
+  idx.forEach(function(pid){ if(byId[pid]) ensure(byId[pid]); });
+  var format = state.resultsConfig.format;
+  matches.forEach(function(m){
+    var result = state.results[m.id];
+    var outcome = computeMatchOutcome(m, result, format);
+    if(!outcome.played) return;
+    var hs=ensure(m.home), as=ensure(m.away);
+    hs.played++; as.played++;
+    if(outcome.winnerId===m.home.id){ hs.wins++; as.losses++; } else { as.wins++; hs.losses++; }
+    if(!outcome.special && result && result.sets){
+      var segsWonH=0, segsWonA=0;
+      result.sets.forEach(function(s, i){
+        if(!s || s[0]==null || s[1]==null) return;
+        if(format==='2setTb' && i===2) return; // supertiebreak isn't counted as a "set"
+        hs.gamesWon+=s[0]; hs.gamesLost+=s[1];
+        as.gamesWon+=s[1]; as.gamesLost+=s[0];
+        if(s[0]>s[1]) segsWonH++; else if(s[1]>s[0]) segsWonA++;
+      });
+      hs.setsWon+=segsWonH; hs.setsLost+=segsWonA;
+      as.setsWon+=segsWonA; as.setsLost+=segsWonH;
+    }
+  });
+  return { matches: matches, stats: stats, players: idx.map(function(pid){ return byId[pid]; }).filter(Boolean) };
+}
+function rankGroup(groupLetter){
+  var data = computeGroupStandingsData(groupLetter);
+  var stats=data.stats, matches=data.matches;
+  var order=[];
+  function resolve(cluster){
+    if(cluster.length===1){ order.push({ player:cluster[0], tied:false, reason:null }); return; }
+    var h2h = miniHeadToHeadWins(cluster, matches);
+    var h2hGroups = splitByKey(cluster, function(p){ return h2h[p.id]||0; });
+    if(h2hGroups.length>1){ h2hGroups.forEach(function(g){ resolveWithReason(g,'vzájemný zápas'); }); return; }
+    var setGroups = splitByKey(cluster, function(p){ return ratioKey(stats[p.id].setsWon, stats[p.id].setsLost); });
+    if(setGroups.length>1){ setGroups.forEach(function(g){ resolveWithReason(g,'poměr setů'); }); return; }
+    var gameGroups = splitByKey(cluster, function(p){ return ratioKey(stats[p.id].gamesWon, stats[p.id].gamesLost); });
+    if(gameGroups.length>1){ gameGroups.forEach(function(g){ resolveWithReason(g,'poměr gamů'); }); return; }
+    var anyPlayed = cluster.some(function(p){ return stats[p.id].played>0; });
+    if(!anyPlayed){
+      // nobody in this cluster has played yet — nothing to actually tie-break,
+      // so don't flag it as an unresolvable tie (that would just be noise).
+      cluster.forEach(function(p){ order.push({ player:p, tied:false, reason:null }); });
+      return;
+    }
+    var tieKey = cluster.map(function(p){ return p.id; }).slice().sort().join(',');
+    var override = state.tieOverrides[tieKey];
+    var ordered = cluster;
+    if(override && override.length===cluster.length && override.every(function(id){ return cluster.some(function(p){ return p.id===id; }); })){
+      ordered = override.map(function(id){ return cluster.filter(function(p){ return p.id===id; })[0]; });
+    }
+    ordered.forEach(function(p){ order.push({ player:p, tied:true, reason:'neřešitelná shoda', tieKey:tieKey }); });
+  }
+  function resolveWithReason(cluster, reason){
+    if(cluster.length===1){ order.push({ player:cluster[0], tied:false, reason:reason }); return; }
+    resolve(cluster);
+  }
+  var winClusters = splitByKey(data.players, function(p){ return stats[p.id].wins; });
+  winClusters.forEach(resolve);
+  return { order: order, stats: stats };
+}
+
+// ---------- rendering: step tabs ----------
+function hasSchedule(){
+  return state.schedule.rounds.some(function(r){ return r.matches.length>0; });
+}
+function updateTabs(){
+  var t1=document.getElementById('tabStep1'), t2=document.getElementById('tabStep2'), t3=document.getElementById('tabStep3'), t4=document.getElementById('tabStep4'), t5=document.getElementById('tabStep5'), t6=document.getElementById('tabStep6');
+  t1.classList.toggle('on', state.step===1);
+  t2.classList.toggle('on', state.step===2);
+  t3.classList.toggle('on', state.step===3);
+  t4.classList.toggle('on', state.step===4);
+  t5.classList.toggle('on', state.step===5);
+  t6.classList.toggle('on', state.step===6);
+  var canStep2 = state.players.length>=MIN_PLAYERS;
+  var canStep3 = state.groups.length>0;
+  var canStep4 = hasSchedule();
+  var canStep5 = hasSchedule();
+  t2.classList.toggle('locked', !canStep2);
+  t3.classList.toggle('locked', !canStep3);
+  t4.classList.toggle('locked', !canStep4);
+  t5.classList.toggle('locked', !canStep5);
+  document.getElementById('step1').classList.toggle('on', state.step===1);
+  document.getElementById('step2').classList.toggle('on', state.step===2);
+  document.getElementById('step3').classList.toggle('on', state.step===3);
+  document.getElementById('step4').classList.toggle('on', state.step===4);
+  document.getElementById('step5').classList.toggle('on', state.step===5);
+  document.getElementById('step6').classList.toggle('on', state.step===6);
+}
+
+// ---------- rendering: player list ----------
+function renderPlayerList(){
+  var list=document.getElementById('plist');
+  var empty=document.getElementById('plistEmpty');
+  list.innerHTML='';
+  document.getElementById('plCount').textContent = state.players.length;
+  empty.style.display = state.players.length? 'none':'block';
+
+  state.players.forEach(function(p, i){
+    var row=document.createElement('div');
+    row.className='prow';
+    row.dataset.id=p.id;
+    var seedHtml = p.seed!=null ? '<span class="pseed">#'+p.seed+'</span>' : '';
+    var clubHtml = p.club ? '<span class="pclub">'+escapeHtml(p.club)+'</span>' : '';
+    row.innerHTML =
+      '<span class="drag-handle">⠿</span>'+
+      '<span class="pidx">'+(i+1)+'.</span>'+
+      '<input class="pname" type="text" value="'+escapeAttr(p.name)+'">'+
+      clubHtml+seedHtml+
+      '<button class="prm" title="Odebrat">×</button>';
+    list.appendChild(row);
+
+    row.querySelector('.pname').addEventListener('input', function(e){
+      p.name = e.target.value;
+      renderDupWarn();
+      scheduleSave();
+    });
+    row.querySelector('.prm').addEventListener('click', function(){
+      state.players = state.players.filter(function(x){ return x.id!==p.id; });
+      renderPlayerList();
+      renderDupWarn();
+      updateTabs();
+      scheduleSave();
+    });
+  });
+}
+function escapeHtml(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+function renderDupWarn(){
+  var dups = findDuplicateNames(state.players);
+  var el=document.getElementById('dupWarn');
+  if(dups.length){
+    el.classList.add('on');
+    el.textContent = '⚠ Možné duplicity: '+dups.join(', ');
+  } else {
+    el.classList.remove('on');
+    el.textContent='';
+  }
+}
+
+// drag reorder for player list
+(function(){
+  var container=document.getElementById('plist');
+  container.addEventListener('pointerdown', function(e){
+    var handle = e.target.closest('.drag-handle');
+    if(!handle) return;
+    var row = handle.closest('.prow');
+    if(!row) return;
+    try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+    row.classList.add('dragging');
+    function move(ev){
+      var y=ev.clientY;
+      var rows=Array.prototype.slice.call(container.querySelectorAll('.prow:not(.dragging)'));
+      var target=null;
+      for(var i=0;i<rows.length;i++){
+        var rect=rows[i].getBoundingClientRect();
+        if(y < rect.top+rect.height/2){ target=rows[i]; break; }
+      }
+      if(target) container.insertBefore(row, target);
+      else container.appendChild(row);
+    }
+    function up(){
+      row.classList.remove('dragging');
+      container.removeEventListener('pointermove', move);
+      container.removeEventListener('pointerup', up);
+      var ids=Array.prototype.slice.call(container.querySelectorAll('.prow')).map(function(r){ return r.dataset.id; });
+      state.players.sort(function(a,b){ return ids.indexOf(a.id)-ids.indexOf(b.id); });
+      renderPlayerList();
+      scheduleSave();
+    }
+    container.addEventListener('pointermove', move);
+    container.addEventListener('pointerup', up);
+  });
+})();
+
+// ---------- step 1 wiring ----------
+document.getElementById('importTa').addEventListener('input', function(e){
+  document.getElementById('liveCount').textContent = liveCount(e.target.value);
+});
+document.getElementById('clearTaBtn').addEventListener('click', function(){
+  document.getElementById('importTa').value='';
+  document.getElementById('liveCount').textContent='0';
+});
+document.getElementById('processBtn').addEventListener('click', function(){
+  var text = document.getElementById('importTa').value;
+  var parsed = parseImportText(text);
+  if(!parsed.length) return;
+  state.players = parsed;
+  renderPlayerList();
+  renderDupWarn();
+  updateTabs();
+  scheduleSave();
+});
+document.getElementById('shuffleBtn').addEventListener('click', function(){
+  var a=state.players;
+  for(var j=a.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var t=a[j]; a[j]=a[k]; a[k]=t; }
+  renderPlayerList();
+  scheduleSave();
+});
+document.getElementById('addRowBtn').addEventListener('click', function(){
+  state.players.push({ id: uid(), name:'', club:null, seed:null });
+  renderPlayerList();
+  updateTabs();
+  var inputs=document.querySelectorAll('#plist .pname');
+  if(inputs.length) inputs[inputs.length-1].focus();
+  scheduleSave();
+});
+document.getElementById('toStep2Btn').addEventListener('click', function(){
+  if(state.players.length < MIN_PLAYERS){
+    document.getElementById('minPlayersWarn').style.display='block';
+    return;
+  }
+  document.getElementById('minPlayersWarn').style.display='none';
+  goToStep(2);
+});
+document.getElementById('tabStep2').addEventListener('click', function(){
+  if(state.players.length>=MIN_PLAYERS) goToStep(2);
+});
+document.getElementById('tabStep1').addEventListener('click', function(){
+  goToStep(1);
+});
+document.getElementById('tabStep3').addEventListener('click', function(){
+  if(state.groups.length>0) goToStep(3);
+});
+document.getElementById('tabStep4').addEventListener('click', function(){
+  if(hasSchedule()) goToStep(4);
+});
+document.getElementById('tabStep5').addEventListener('click', function(){
+  if(hasSchedule()) goToStep(5);
+});
+document.getElementById('tabStep6').addEventListener('click', function(){ goToStep(6); });
+document.getElementById('backTo1Btn').addEventListener('click', function(){ goToStep(1); });
+document.getElementById('backTo2Btn').addEventListener('click', function(){ goToStep(2); });
+document.getElementById('backTo3Btn').addEventListener('click', function(){ goToStep(3); });
+document.getElementById('backTo4Btn').addEventListener('click', function(){ goToStep(4); });
+document.getElementById('backTo5Btn').addEventListener('click', function(){ goToStep(5); });
+document.getElementById('toStep3Btn').addEventListener('click', function(){
+  if(state.groups.length>0) goToStep(3);
+});
+document.getElementById('toStep4Btn').addEventListener('click', function(){
+  if(hasSchedule()) goToStep(4);
+});
+document.getElementById('toStep5Btn').addEventListener('click', function(){
+  if(hasSchedule()) goToStep(5);
+});
+document.getElementById('toStep6Btn').addEventListener('click', function(){ goToStep(6); });
+
+function goToStep(n){
+  state.step=n;
+  updateTabs();
+  if(n===2) renderStep2();
+  if(n===3) renderStep3();
+  if(n===4) renderStep4();
+  if(n===5) renderStep5();
+  if(n===6) renderStep6();
+  scheduleSave();
+}
+
+['resetBtn','resetBtn2','resetBtn3','resetBtn4','resetBtn5','resetBtn6'].forEach(function(id){
+  var btn=document.getElementById(id);
+  if(!btn) return;
+  btn.addEventListener('click', function(){
+    if(!confirm('Opravdu smazat celý rozjetý turnaj a začít znovu?')) return;
+    localStorage.removeItem(STORE_KEY);
+    // mutate state.groupConfig / state.resultsConfig in place rather than
+    // replacing `state` wholesale — `gc` (and any similar alias) was bound
+    // to the original nested object at script-load time, so a wholesale
+    // `state = {...}` here would silently disconnect it (see the reload
+    // bug fixed earlier: same root cause, triggered at a different time).
+    state.step=1;
+    state.players=[];
+    Object.assign(state.groupConfig, { mode:'count', value:4, groupCount:4, sizes:[], seeding:'snake', courts:2, matchDuration:25, startTime:'' });
+    state.groups=[];
+    state.schedule={ sig:null, rounds:[] };
+    Object.assign(state.resultsConfig, { format:'1set', advancePerGroup:2, advanceWildcards:0 });
+    state.results={};
+    state.tieOverrides={};
+    state.bracketSeeding={ order:null };
+    state.bracket=null;
+    state.security.pin=null;
+    unlocked=true;
+    selectedVariant=null;
+    remote.id=null;
+    saveRemoteRef();
+    history.replaceState(null, '', location.pathname);
+    document.getElementById('importTa').value='';
+    document.getElementById('liveCount').textContent='0';
+    renderPlayerList();
+    renderDupWarn();
+    updateTabs();
+    updateLockUI();
+    updateSyncUI();
+    setSyncStatus('', '☁️ Lokálně (bez cloudu)');
+  });
+});
+
+// ---------- step 2: group config ----------
+var gc = state.groupConfig;
+var selectedVariant = null;
+
+function renderStep2(){
+  document.getElementById('modeCountBtn').classList.toggle('on', gc.mode==='count');
+  document.getElementById('modeSizeBtn').classList.toggle('on', gc.mode==='size');
+  document.getElementById('valueLbl').textContent = gc.mode==='count' ? 'Počet skupin' : 'Hráčů ve skupině';
+  document.getElementById('valueInput').value = gc.value;
+  document.getElementById('courtsInput').value = gc.courts;
+  document.getElementById('durInput').value = gc.matchDuration;
+  document.getElementById('startInput').value = gc.startTime||'';
+  renderVariants();
+}
+
+function renderVariants(){
+  var n = state.players.length;
+  var variants = computeVariants(n, gc.mode, parseFloat(document.getElementById('valueInput').value)||gc.value);
+  var box=document.getElementById('vcards');
+  box.innerHTML='';
+  if(!selectedVariant || variants.every(function(v){ return v.g!==selectedVariant.g; })){
+    // pick the candidate closest to current groupCount, else the middle one
+    selectedVariant = variants.reduce(function(best,v){
+      if(!best) return v;
+      return Math.abs(v.g-gc.groupCount) < Math.abs(best.g-gc.groupCount) ? v : best;
+    }, null) || variants[0];
+  }
+  variants.forEach(function(v){
+    var card=document.createElement('div');
+    card.className='vcard'+(v.g===selectedVariant.g?' on':'');
+    var avg = (n/v.g);
+    card.innerHTML =
+      '<div class="vtop"><span>'+v.g+' skupiny/skupin</span><span>'+v.matches+' zápasů</span></div>'+
+      '<div class="vsizes">'+fmtSizes(v.sizes)+' hráčů</div>'+
+      '<div class="vmeta">průměrně ~'+avg.toFixed(1)+' hráčů na skupinu</div>';
+    card.addEventListener('click', function(){
+      selectedVariant = v;
+      gc.groupCount = v.g;
+      gc.sizes = v.sizes;
+      applySeeding();
+      renderVariants();
+      renderUnevenNote();
+      renderTimeEstimate();
+      scheduleSave();
+    });
+    box.appendChild(card);
+  });
+  gc.groupCount = selectedVariant.g;
+  gc.sizes = selectedVariant.sizes;
+  renderUnevenNote();
+  renderTimeEstimate();
+  if(!state.groups.length || state.groups.length!==gc.groupCount){
+    applySeeding();
+  }
+  renderGroups();
+}
+
+function renderUnevenNote(){
+  var el=document.getElementById('unevenNote');
+  var sizes = state.groups.length ? state.groups.map(function(g){ return g.length; }) : (selectedVariant ? selectedVariant.sizes : []);
+  var uneven = sizes.length && Math.max.apply(null,sizes)!==Math.min.apply(null,sizes);
+  if(uneven){
+    el.style.display='block';
+    el.textContent = 'Skupiny nejsou stejně velké ('+fmtSizes(sizes)+') — hráči z menší skupiny odehrají méně zápasů, srovnání tabulek mezi skupinami proto není 100% férové.';
+  } else {
+    el.style.display='none';
+  }
+}
+
+document.getElementById('modeCountBtn').addEventListener('click', function(){
+  gc.mode='count'; gc.value=gc.groupCount||4;
+  document.getElementById('valueInput').value=gc.value;
+  document.getElementById('valueLbl').textContent='Počet skupin';
+  document.getElementById('modeCountBtn').classList.add('on');
+  document.getElementById('modeSizeBtn').classList.remove('on');
+  renderVariants(); scheduleSave();
+});
+document.getElementById('modeSizeBtn').addEventListener('click', function(){
+  gc.mode='size';
+  var currentAvg = state.players.length && gc.groupCount ? Math.round(state.players.length/gc.groupCount) : 4;
+  gc.value=currentAvg;
+  document.getElementById('valueInput').value=gc.value;
+  document.getElementById('valueLbl').textContent='Hráčů ve skupině';
+  document.getElementById('modeSizeBtn').classList.add('on');
+  document.getElementById('modeCountBtn').classList.remove('on');
+  renderVariants(); scheduleSave();
+});
+document.getElementById('valueInput').addEventListener('input', function(e){
+  gc.value = parseFloat(e.target.value)||gc.value;
+  renderVariants(); scheduleSave();
+});
+['courtsInput','durInput','startInput'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    gc.courts = parseFloat(document.getElementById('courtsInput').value)||1;
+    gc.matchDuration = parseFloat(document.getElementById('durInput').value)||1;
+    gc.startTime = document.getElementById('startInput').value;
+    renderTimeEstimate(); scheduleSave();
+  });
+});
+
+function renderTimeEstimate(){
+  var sizes = (state.groups.length ? state.groups.map(function(g){return g.length;}) : (selectedVariant?selectedVariant.sizes:[]));
+  var totalMatches = matchesForSizes(sizes);
+  var courts = Math.max(1, gc.courts||1);
+  var totalMin = totalMatches * gc.matchDuration / courts;
+  document.getElementById('timeEstimate').textContent = fmtMinutes(totalMin);
+  document.getElementById('timeEstimateSub').textContent = totalMatches+' zápasů celkem · '+courts+' kurt(y/ů) · ~'+gc.matchDuration+' min/zápas';
+
+  var warnEl=document.getElementById('nextDayWarn');
+  if(gc.startTime){
+    var parts = gc.startTime.split(':');
+    var startMin = parseInt(parts[0],10)*60 + parseInt(parts[1],10);
+    var endMin = startMin + totalMin;
+    var endH = Math.floor((endMin%1440)/60), endM = Math.round(endMin%60);
+    var crossesDay = endMin >= 1440;
+    var endStr = (endH<10?'0':'')+endH+':'+(endM<10?'0':'')+endM;
+    if(crossesDay){
+      warnEl.style.display='block';
+      warnEl.textContent='⚠ Při startu v '+gc.startTime+' skupinová fáze skončí až '+endStr+' následující den — zvaž víc kurtů, kratší zápasy, nebo méně skupin.';
+    } else if(endMin > 20*60){
+      warnEl.style.display='block';
+      warnEl.textContent='⚠ Odhadovaný konec skupinové fáze: '+endStr+' — dost pozdě, zváž víc kurtů nebo kratší formát zápasu.';
+    } else {
+      warnEl.style.display='none';
+    }
+  } else {
+    warnEl.style.display='none';
+  }
+}
+
+// ---------- seeding ----------
+document.getElementById('seedSnakeBtn').addEventListener('click', function(){ setSeeding('snake'); });
+document.getElementById('seedRandomBtn').addEventListener('click', function(){ setSeeding('random'); });
+document.getElementById('seedManualBtn').addEventListener('click', function(){ setSeeding('manual'); });
+document.getElementById('reshuffleSeedBtn').addEventListener('click', function(){ applySeeding(true); renderGroups(); renderTimeEstimate(); scheduleSave(); });
+
+function setSeeding(mode){
+  gc.seeding=mode;
+  ['Snake','Random','Manual'].forEach(function(m){
+    document.getElementById('seed'+m+'Btn').classList.toggle('on', m.toLowerCase()===mode);
+  });
+  document.getElementById('reshuffleSeedBtn').style.display = mode==='random' ? 'inline-block':'none';
+  var hints = {
+    snake: 'Nejvýše nasazení hráči (dle pořadí ze seznamu) se rozprostřou rovnoměrně do všech skupin.',
+    random: 'Náhodné rozdělení do skupin bez ohledu na pořadí nasazení. Klikni na „Přeskupit“ pro nové losování.',
+    manual: 'Přetáhni hráče mezi skupinami. Výchozí rozložení je podle hadího systému.'
+  };
+  document.getElementById('seedHint').textContent = hints[mode];
+  applySeeding(mode==='random');
+  renderGroups();
+  renderTimeEstimate();
+  scheduleSave();
+}
+
+function applySeeding(forceReshuffle){
+  var n = state.players.length;
+  var sizes = gc.sizes && gc.sizes.length ? gc.sizes : evenSplit(n, gc.groupCount||1);
+  if(gc.seeding==='manual' && state.groups.length===sizes.length && !forceReshuffle){
+    return; // keep existing manual arrangement
+  }
+  var idxGroups;
+  if(gc.seeding==='random'){
+    idxGroups = randomAssign(n, sizes);
+  } else {
+    idxGroups = snakeAssign(n, sizes); // also used as manual's starting point
+  }
+  state.groups = idxGroups.map(function(idxs){
+    return idxs.map(function(i){ return state.players[i].id; });
+  });
+}
+
+function renderGroups(){
+  var box=document.getElementById('gcols');
+  box.innerHTML='';
+  var byId={};
+  state.players.forEach(function(p){ byId[p.id]=p; });
+  state.groups.forEach(function(ids, gi){
+    var col=document.createElement('div');
+    col.className='gcol';
+    col.dataset.gi=gi;
+    var letter=String.fromCharCode(65+gi);
+    col.innerHTML='<h4><span>Skupina '+letter+'</span><span>'+ids.length+'</span></h4>';
+    ids.forEach(function(pid, pi){
+      var p=byId[pid];
+      if(!p) return;
+      var chip=document.createElement('div');
+      chip.className='pchip';
+      chip.dataset.id=pid;
+      chip.innerHTML='<span class="pcseed">'+(pi+1)+'.</span>'+escapeHtml(p.name||'(bez jména)');
+      col.appendChild(chip);
+    });
+    box.appendChild(col);
+  });
+}
+
+// manual drag between group columns
+(function(){
+  var root=document.getElementById('gcols');
+  root.addEventListener('pointerdown', function(e){
+    if(gc.seeding!=='manual') return;
+    var chip=e.target.closest('.pchip');
+    if(!chip) return;
+    try{ chip.setPointerCapture(e.pointerId); }catch(err){}
+    chip.classList.add('dragging');
+    function move(ev){
+      var elUnder=document.elementFromPoint(ev.clientX, ev.clientY);
+      var col = elUnder ? elUnder.closest('.gcol') : null;
+      Array.prototype.forEach.call(root.querySelectorAll('.gcol'), function(c){
+        c.classList.toggle('drop-target', c===col);
+      });
+      if(col){
+        var chips=Array.prototype.slice.call(col.querySelectorAll('.pchip:not(.dragging)'));
+        var after=null;
+        for(var i=0;i<chips.length;i++){
+          var r=chips[i].getBoundingClientRect();
+          if(ev.clientY < r.top+r.height/2){ after=chips[i]; break; }
+        }
+        if(after) col.insertBefore(chip, after);
+        else col.appendChild(chip);
+      }
+    }
+    function up(){
+      chip.classList.remove('dragging');
+      Array.prototype.forEach.call(root.querySelectorAll('.gcol'), function(c){ c.classList.remove('drop-target'); });
+      root.removeEventListener('pointermove', move);
+      root.removeEventListener('pointerup', up);
+      // rebuild state.groups from DOM order
+      var cols=Array.prototype.slice.call(root.querySelectorAll('.gcol'));
+      state.groups = cols.map(function(c){
+        return Array.prototype.slice.call(c.querySelectorAll('.pchip')).map(function(ch){ return ch.dataset.id; });
+      });
+      renderGroups();
+      renderUnevenNote();
+      renderTimeEstimate();
+      scheduleSave();
+    }
+    root.addEventListener('pointermove', move);
+    root.addEventListener('pointerup', up);
+  });
+})();
+
+// ---------- step 3: schedule ----------
+function renderStep3(){
+  document.getElementById('courtsInput3').value = gc.courts;
+  document.getElementById('durInput3').value = gc.matchDuration;
+  var sig = groupsSignature(state.groups);
+  if(state.schedule.sig !== sig){
+    state.schedule = { sig: sig, rounds: buildSchedule() };
+    scheduleSave();
+  }
+  renderRounds();
+}
+
+document.getElementById('regenScheduleBtn').addEventListener('click', function(){
+  state.schedule = { sig: groupsSignature(state.groups), rounds: buildSchedule() };
+  renderRounds();
+  scheduleSave();
+});
+['courtsInput3','durInput3'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    gc.courts = parseFloat(document.getElementById('courtsInput3').value)||1;
+    gc.matchDuration = parseFloat(document.getElementById('durInput3').value)||1;
+    document.getElementById('courtsInput').value = gc.courts;
+    document.getElementById('durInput').value = gc.matchDuration;
+    renderRounds();
+    scheduleSave();
+  });
+});
+
+function renderRounds(){
+  var rounds = state.schedule.rounds;
+  var box = document.getElementById('roundsBox');
+  box.innerHTML='';
+  var totalMatches=0, totalMinutes=0;
+  rounds.forEach(function(round, ri){
+    if(!round.matches.length && !round.byes.length) return;
+    var blocks = assignCourts(round.matches, gc.courts);
+    var roundMin = blocks.length * gc.matchDuration;
+    totalMatches += round.matches.length;
+    totalMinutes += roundMin;
+
+    var card = document.createElement('div');
+    card.className='rndcard';
+    var html = '<div class="rndhd"><span class="rt">Kolo '+(ri+1)+'</span><span class="hint-txt" style="margin:0">'+round.matches.length+' zápas(ů) · ~'+fmtMinutes(roundMin)+'</span></div>';
+    if(!blocks.length){
+      html += '<div class="rndempty">Bez zápasů v tomto kole</div>';
+    }
+    blocks.forEach(function(block, bi){
+      html += '<div class="rndblock">';
+      if(blocks.length>1) html += '<div class="blocklbl">Blok '+(bi+1)+'/'+blocks.length+'</div>';
+      block.forEach(function(m, ci){
+        html += '<div class="mrow"><span class="mcourt">Kurt '+(ci+1)+'</span><span class="mgrp">Sk. '+m.group+'</span><span class="mvs">'+escapeHtml(m.home.name)+' – '+escapeHtml(m.away.name)+'</span></div>';
+      });
+      html += '</div>';
+    });
+    if(round.byes.length){
+      round.byes.forEach(function(b){
+        html += '<div class="byerow">Volno: '+escapeHtml(b.player.name)+' (sk. '+b.group+')</div>';
+      });
+    }
+    card.innerHTML = html;
+    box.appendChild(card);
+  });
+
+  document.getElementById('sumMatches').textContent = totalMatches;
+  document.getElementById('sumRounds').textContent = rounds.filter(function(r){ return r.matches.length; }).length;
+  document.getElementById('sumTime').textContent = fmtMinutes(totalMinutes);
+
+  var warnEl = document.getElementById('nextDayWarn3');
+  if(gc.startTime){
+    var parts = gc.startTime.split(':');
+    var startMin = parseInt(parts[0],10)*60 + parseInt(parts[1],10);
+    var endMin = startMin + totalMinutes;
+    var endH = Math.floor((endMin%1440)/60), endM = Math.round(endMin%60);
+    var endStr = (endH<10?'0':'')+endH+':'+(endM<10?'0':'')+endM;
+    if(endMin >= 1440){
+      warnEl.style.display='block';
+      warnEl.textContent='⚠ Při startu v '+gc.startTime+' se podle skutečného rozpisu skupinová fáze protáhne až na '+endStr+' následující den.';
+    } else if(endMin > 20*60){
+      warnEl.style.display='block';
+      warnEl.textContent='⚠ Odhadovaný konec podle rozpisu: '+endStr+'.';
+    } else {
+      warnEl.style.display='none';
+    }
+  } else {
+    warnEl.style.display='none';
+  }
+}
+
+// ---------- step 4: results & standings ----------
+var currentResultsView = 'matches';
+
+function renderStep4(){
+  document.getElementById('scoreFormatSel').value = state.resultsConfig.format;
+  document.getElementById('advanceInput').value = state.resultsConfig.advancePerGroup;
+  document.getElementById('wildcardInput').value = state.resultsConfig.advanceWildcards;
+  showResultsView(currentResultsView);
+}
+function showResultsView(view){
+  currentResultsView = view;
+  document.getElementById('viewMatchesBtn').classList.toggle('on', view==='matches');
+  document.getElementById('viewStandingsBtn').classList.toggle('on', view==='standings');
+  document.getElementById('resultsMatchesView').style.display = view==='matches' ? 'block':'none';
+  document.getElementById('resultsStandingsView').style.display = view==='standings' ? 'block':'none';
+  if(view==='matches') renderResultsMatches();
+  else renderResultsStandings();
+}
+document.getElementById('viewMatchesBtn').addEventListener('click', function(){ showResultsView('matches'); });
+document.getElementById('viewStandingsBtn').addEventListener('click', function(){ showResultsView('standings'); });
+document.getElementById('scoreFormatSel').addEventListener('change', function(e){
+  state.resultsConfig.format = e.target.value;
+  showResultsView(currentResultsView);
+  scheduleSave();
+});
+['advanceInput','wildcardInput'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    state.resultsConfig.advancePerGroup = parseInt(document.getElementById('advanceInput').value,10)||1;
+    state.resultsConfig.advanceWildcards = parseInt(document.getElementById('wildcardInput').value,10)||0;
+    if(currentResultsView==='standings') renderResultsStandings();
+    scheduleSave();
+  });
+});
+
+function matchStatusLabel(m){
+  var r = state.results[m.id];
+  if(!r) return null;
+  var format = state.resultsConfig.format;
+  var outcome = computeMatchOutcome(m, r, format);
+  if(r.status==='wo'){
+    var loserName = outcome.winnerId===m.home.id ? m.away.name : m.home.name;
+    return { text: loserName+' – kontumačně', wo:true };
+  }
+  if(r.status==='ret'){
+    var loserName2 = outcome.winnerId===m.home.id ? m.away.name : m.home.name;
+    return { text: loserName2+' – skreč', wo:true };
+  }
+  if(outcome.played){
+    var segs = format==='2setTb' ? [r.sets[0], r.sets[1]].concat(r.sets[2] ? [r.sets[2]] : []) : [r.sets[0]];
+    var txt = segs.map(function(s){ return s[0]+':'+s[1]; }).join(', ');
+    return { text: txt, wo:false };
+  }
+  return null;
+}
+
+function renderResultsMatches(){
+  var box=document.getElementById('resultsMatchesView');
+  box.innerHTML='';
+  var format = state.resultsConfig.format;
+  var any=false;
+  state.schedule.rounds.forEach(function(round, ri){
+    if(!round.matches.length) return;
+    any=true;
+    var card=document.createElement('div');
+    card.className='rndcard';
+    var hd=document.createElement('div');
+    hd.className='rndhd';
+    hd.innerHTML='<span class="rt">Kolo '+(ri+1)+'</span>';
+    card.appendChild(hd);
+    round.matches.forEach(function(m){ card.appendChild(buildMatchCard(m, format)); });
+    box.appendChild(card);
+  });
+  if(!any){
+    box.innerHTML='<div class="rndempty">Nejdřív vygeneruj rozpis zápasů v kroku 3.</div>';
+  }
+}
+
+function buildMatchCard(m, format){
+  var wrap=document.createElement('div');
+  wrap.className='mcard';
+  renderMatchCardInner(wrap, m, format);
+  return wrap;
+}
+function renderMatchCardInner(wrap, m, format){
+  var isOpen = wrap.classList.contains('open');
+  wrap.innerHTML='';
+  wrap.className='mcard'+(isOpen?' open':'');
+  var label = matchStatusLabel(m);
+  if(label) wrap.classList.add('done');
+  var head=document.createElement('div');
+  head.className='mhead';
+  head.innerHTML =
+    '<span class="mgrp">Sk.'+m.group+'</span>'+
+    '<span class="mvs">'+escapeHtml(m.home.name)+' – '+escapeHtml(m.away.name)+'</span>'+
+    (label ? ('<span class="mresult'+(label.wo?' wo':'')+'">'+escapeHtml(label.text)+'</span>') : '<span class="mresult" style="color:var(--hint);font-weight:500">zadat</span>')+
+    '<span class="mchev">▾</span>';
+  head.addEventListener('click', function(){ wrap.classList.toggle('open'); });
+  wrap.appendChild(head);
+  var body=document.createElement('div');
+  body.className='mbody';
+  body.appendChild(buildScoreEntry(wrap, m, format));
+  wrap.appendChild(body);
+}
+
+function makeStepper(val, onChange){
+  var d=document.createElement('div'); d.className='stepper';
+  var minus=document.createElement('button'); minus.type='button'; minus.className='stepbtn'; minus.textContent='−';
+  var span=document.createElement('span'); span.className='stepval'; span.textContent=(val||0);
+  var plus=document.createElement('button'); plus.type='button'; plus.className='stepbtn'; plus.textContent='+';
+  minus.addEventListener('click', function(){ onChange(Math.max(0,(val||0)-1)); });
+  plus.addEventListener('click', function(){ onChange((val||0)+1); });
+  d.appendChild(minus); d.appendChild(span); d.appendChild(plus);
+  return d;
+}
+function setSegValue(wrap, m, format, idx, side, nv){
+  if(!state.results[m.id] || state.results[m.id].status!=='normal'){
+    state.results[m.id] = { status:'normal', sets:[] };
+  }
+  var r=state.results[m.id];
+  if(!r.sets[idx]) r.sets[idx]=[0,0];
+  r.sets[idx][side]=Math.max(0,nv);
+  renderMatchCardInner(wrap, m, format);
+  scheduleSave();
+}
+function renderSetRow(container, wrap, m, format, idx, label, sets){
+  var v = sets[idx] || [0,0];
+  var box=document.createElement('div');
+  var lbl=document.createElement('div'); lbl.className='setlbl'; lbl.textContent=label; box.appendChild(lbl);
+  var row=document.createElement('div'); row.className='setrow';
+  var homeNm=document.createElement('span'); homeNm.className='snm'; homeNm.textContent=m.home.name;
+  var awayNm=document.createElement('span'); awayNm.className='snm rt'; awayNm.textContent=m.away.name;
+  row.appendChild(homeNm);
+  row.appendChild(makeStepper(v[0], function(nv){ setSegValue(wrap,m,format,idx,0,nv); }));
+  var colon=document.createElement('span'); colon.textContent=':'; colon.style.cssText='font-weight:700;color:var(--hint)';
+  row.appendChild(colon);
+  row.appendChild(makeStepper(v[1], function(nv){ setSegValue(wrap,m,format,idx,1,nv); }));
+  row.appendChild(awayNm);
+  box.appendChild(row);
+  var validator = segValidator(format, idx);
+  if(!(v[0]===0 && v[1]===0) && !validator(v[0],v[1])){
+    var warn=document.createElement('div'); warn.className='setinvalid'; warn.textContent='Neplatné skóre pro zvolený formát';
+    box.appendChild(warn);
+  }
+  container.appendChild(box);
+}
+function makeOutcomeBtn(wrap, m, format, status, winnerId, text){
+  var btn=document.createElement('button'); btn.type='button'; btn.className='wobtn'; btn.textContent=text;
+  var result=state.results[m.id];
+  if(result && result.status===status && result.winnerId===winnerId) btn.classList.add('active');
+  btn.addEventListener('click', function(){
+    state.results[m.id] = { status:status, winnerId:winnerId, sets:[] };
+    renderMatchCardInner(wrap, m, format);
+    scheduleSave();
+  });
+  return btn;
+}
+function buildScoreEntry(wrap, m, format){
+  var el=document.createElement('div');
+  var result = state.results[m.id];
+  var sets = (result && result.status==='normal' && result.sets) || [];
+
+  var segCount = format==='2setTb' ? 2 : 1;
+  for(var i=0;i<segCount;i++){
+    renderSetRow(el, wrap, m, format, i, format==='2setTb' ? ('Set '+(i+1)) : 'Skóre', sets);
+  }
+  if(format==='2setTb'){
+    var s0=sets[0], s1=sets[1];
+    var split = s0 && s1 && isValidSet(s0[0],s0[1]) && isValidSet(s1[0],s1[1]) && ((s0[0]>s0[1]) !== (s1[0]>s1[1]));
+    if(split){
+      renderSetRow(el, wrap, m, format, 2, 'Supertiebreak (rozhoduje)', sets);
+    }
+  }
+
+  var woWrap=document.createElement('div'); woWrap.className='wobtns';
+  woWrap.appendChild(makeOutcomeBtn(wrap,m,format,'wo', m.home.id, 'Kontumačně: '+m.away.name+' nenastoupil/a'));
+  woWrap.appendChild(makeOutcomeBtn(wrap,m,format,'wo', m.away.id, 'Kontumačně: '+m.home.name+' nenastoupil/a'));
+  el.appendChild(woWrap);
+  var retWrap=document.createElement('div'); retWrap.className='wobtns';
+  retWrap.appendChild(makeOutcomeBtn(wrap,m,format,'ret', m.away.id, 'Skreč: '+m.home.name+' vzdal/a'));
+  retWrap.appendChild(makeOutcomeBtn(wrap,m,format,'ret', m.home.id, 'Skreč: '+m.away.name+' vzdal/a'));
+  el.appendChild(retWrap);
+
+  var clearRow=document.createElement('div'); clearRow.className='clearrow';
+  var clearBtn=document.createElement('button'); clearBtn.type='button'; clearBtn.className='bghost'; clearBtn.style.padding='4px 0'; clearBtn.textContent='Vymazat výsledek';
+  clearBtn.addEventListener('click', function(){ delete state.results[m.id]; renderMatchCardInner(wrap,m,format); scheduleSave(); });
+  clearRow.appendChild(clearBtn);
+  el.appendChild(clearRow);
+
+  return el;
+}
+
+// Shared advancement computation — used by the standings highlighting AND
+// by the bracket seeding, so the two views can never disagree about who
+// qualifies. "place" tiers (all 1st places, then all 2nd places, ...) are
+// each internally ordered by wins then games ratio, matching how wildcard
+// ("best 3rd place") candidates are already compared.
+function computeAdvancement(){
+  var advCount = state.resultsConfig.advancePerGroup;
+  var wcCount = state.resultsConfig.advanceWildcards;
+  var groupLetters = state.groups.map(function(_,i){ return String.fromCharCode(65+i); });
+  var rankings = {};
+  groupLetters.forEach(function(letter){ rankings[letter] = rankGroup(letter); });
+  function tierSort(A,B){
+    var sa=rankings[A.letter].stats[A.entry.player.id], sb=rankings[B.letter].stats[B.entry.player.id];
+    if(sb.wins!==sa.wins) return sb.wins-sa.wins;
+    return ratioKey(sb.gamesWon,sb.gamesLost) - ratioKey(sa.gamesWon,sa.gamesLost);
+  }
+  var seedList=[];
+  for(var place=0; place<advCount; place++){
+    var tier=[];
+    groupLetters.forEach(function(letter){ var ord=rankings[letter].order; if(ord[place]) tier.push({ entry:ord[place], letter:letter }); });
+    tier.sort(tierSort);
+    tier.forEach(function(t){ seedList.push({ id:t.entry.player.id, name:t.entry.player.name, group:t.letter }); });
+  }
+  var wcPool=[];
+  groupLetters.forEach(function(letter){ var ord=rankings[letter].order; if(ord.length>advCount) wcPool.push({ entry:ord[advCount], letter:letter }); });
+  wcPool.sort(tierSort);
+  var wcQualified = wcPool.slice(0, wcCount);
+  wcQualified.forEach(function(w){ seedList.push({ id:w.entry.player.id, name:w.entry.player.name, group:w.letter }); });
+
+  var advancingIds={}; seedList.forEach(function(s){ advancingIds[s.id]=true; });
+  var wcQualifiedIds={}; wcQualified.forEach(function(w){ wcQualifiedIds[w.entry.player.id]=true; });
+
+  var maxTier=0; groupLetters.forEach(function(letter){ maxTier=Math.max(maxTier, rankings[letter].order.length); });
+  var consList=[];
+  for(var place2=0; place2<maxTier; place2++){
+    var tier2=[];
+    groupLetters.forEach(function(letter){ var ord=rankings[letter].order; var e=ord[place2]; if(e && !advancingIds[e.player.id]) tier2.push({ entry:e, letter:letter }); });
+    tier2.sort(tierSort);
+    tier2.forEach(function(t){ consList.push({ id:t.entry.player.id, name:t.entry.player.name, group:t.letter }); });
+  }
+
+  return { rankings:rankings, groupLetters:groupLetters, advCount:advCount, seedList:seedList, consList:consList, advancingIds:advancingIds, wcQualifiedIds:wcQualifiedIds };
+}
+
+function renderResultsStandings(){
+  var box=document.getElementById('resultsStandingsView');
+  box.innerHTML='';
+  if(!state.groups.length){
+    box.innerHTML='<div class="rndempty">Nejdřív vygeneruj rozpis zápasů v kroku 3.</div>';
+    return;
+  }
+  var adv = computeAdvancement();
+  adv.groupLetters.forEach(function(letter){
+    box.appendChild(buildStandingsTable(letter, adv.rankings[letter], adv.advCount, adv.wcQualifiedIds));
+  });
+}
+
+function buildStandingsTable(letter, ranking, advCount, wcQualifiedIds){
+  var wrap=document.createElement('div'); wrap.className='stbl-wrap';
+  var hd=document.createElement('div'); hd.className='stbl-hd'; hd.innerHTML='<span>Skupina '+letter+'</span>';
+  wrap.appendChild(hd);
+  var showSets = state.resultsConfig.format==='2setTb';
+  var table=document.createElement('table'); table.className='stbl';
+  table.innerHTML = '<thead><tr><th>Hráč</th><th>Z</th>'+(showSets?'<th>Sety</th>':'')+'<th>Gamy</th></tr></thead>';
+  var tbody=document.createElement('tbody');
+  var tieGroups={};
+  ranking.order.forEach(function(row, pos){
+    var st = ranking.stats[row.player.id];
+    var tr=document.createElement('tr');
+    var tag='';
+    if(pos<advCount){ tr.classList.add('advrow'); tag=' <span class="postag a">postupuje</span>'; }
+    else if(wcQualifiedIds[row.player.id]){ tr.classList.add('wcrow'); tag=' <span class="postag w">nejlepší 3. místo</span>'; }
+    tr.innerHTML = '<td>'+(pos+1)+'. '+escapeHtml(row.player.name)+tag+'</td>'+
+      '<td>'+st.wins+':'+st.losses+'</td>'+
+      (showSets? ('<td>'+st.setsWon+':'+st.setsLost+'</td>') : '')+
+      '<td>'+st.gamesWon+':'+st.gamesLost+'</td>';
+    tbody.appendChild(tr);
+    if(row.tied){
+      if(!tieGroups[row.tieKey]) tieGroups[row.tieKey]=[];
+      tieGroups[row.tieKey].push(row.player);
+    }
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+
+  var noteRow=document.createElement('div'); noteRow.className='whyrow';
+  var reasons = ranking.order.filter(function(r){ return r.reason && r.reason!=='neřešitelná shoda'; }).map(function(r){ return r.player.name+' — '+r.reason; });
+  noteRow.textContent = reasons.length ? ('Rozhodlo: '+reasons.join(' · ')) : 'Pořadí podle počtu výher.';
+  wrap.appendChild(noteRow);
+
+  Object.keys(tieGroups).forEach(function(tieKey){
+    if(tieGroups[tieKey].length<2) return;
+    var tz=document.createElement('div'); tz.className='tiezone lockable';
+    var msg=document.createElement('div');
+    msg.textContent='⚠ Neřešitelná shoda mezi '+tieGroups[tieKey].map(function(p){ return p.name; }).join(', ')+' — přetažením uprav pořadí ručně:';
+    tz.appendChild(msg);
+    var dragList=document.createElement('div'); dragList.style.marginTop='6px';
+    tieGroups[tieKey].forEach(function(p){
+      var chip=document.createElement('div'); chip.className='tiechip'; chip.dataset.id=p.id;
+      chip.innerHTML='<span class="drag-handle">⠿</span> '+escapeHtml(p.name);
+      dragList.appendChild(chip);
+    });
+    tz.appendChild(dragList);
+    wrap.appendChild(tz);
+    enableTieDrag(dragList, tieKey);
+  });
+
+  return wrap;
+}
+
+function enableTieDrag(container, tieKey){
+  container.addEventListener('pointerdown', function(e){
+    var handle=e.target.closest('.drag-handle');
+    if(!handle) return;
+    var chip=handle.closest('.tiechip');
+    if(!chip) return;
+    try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+    chip.classList.add('dragging');
+    function move(ev){
+      var y=ev.clientY;
+      var chips=Array.prototype.slice.call(container.querySelectorAll('.tiechip:not(.dragging)'));
+      var target=null;
+      for(var i=0;i<chips.length;i++){
+        var r=chips[i].getBoundingClientRect();
+        if(y<r.top+r.height/2){ target=chips[i]; break; }
+      }
+      if(target) container.insertBefore(chip,target); else container.appendChild(chip);
+    }
+    function up(){
+      chip.classList.remove('dragging');
+      container.removeEventListener('pointermove',move);
+      container.removeEventListener('pointerup',up);
+      var ids=Array.prototype.slice.call(container.querySelectorAll('.tiechip')).map(function(c){ return c.dataset.id; });
+      state.tieOverrides[tieKey]=ids;
+      renderResultsStandings();
+      scheduleSave();
+    }
+    container.addEventListener('pointermove',move);
+    container.addEventListener('pointerup',up);
+  });
+}
+
+// ---------- organizer PIN lock ----------
+// Guards structural settings (names, groups, seeding, schedule regen, score
+// format, advancement, tie overrides, resets) behind an optional PIN the
+// organizer sets themselves. This is a misclick/mischief guard for a single
+// shared device, not real security — plain-text PIN in localStorage is fine
+// for that purpose. Match-result entry itself is intentionally NOT gated,
+// since courtside trenéři/rodiče should be able to enter scores freely.
+function isPinSet(){ return !!state.security.pin; }
+function updateLockUI(){
+  document.body.classList.toggle('pin-active', isPinSet());
+  document.body.classList.toggle('pin-is-locked', isPinSet() && !unlocked);
+  var btn = document.getElementById('lockBtn');
+  if(!isPinSet()){
+    btn.className='lockbtn';
+    btn.textContent='🔓 Nastavit PIN';
+  } else if(unlocked){
+    btn.className='lockbtn pin-unlocked';
+    btn.textContent='🔓 Odemčeno';
+  } else {
+    btn.className='lockbtn pin-locked';
+    btn.textContent='🔒 Zamčeno';
+  }
+  document.getElementById('pinChangeBtn').style.display = (isPinSet() && unlocked) ? 'inline-block' : 'none';
+}
+function openPinModal(mode){
+  var overlay=document.getElementById('pinOverlay');
+  var title=document.getElementById('pinTitle');
+  var msg=document.getElementById('pinMsg');
+  var input=document.getElementById('pinInput');
+  var err=document.getElementById('pinErr');
+  var confirmBtn=document.getElementById('pinConfirmBtn');
+  err.textContent='';
+  input.value='';
+  overlay.dataset.mode=mode;
+  if(mode==='set'){
+    title.textContent = isPinSet() ? 'Změnit PIN organizátora' : 'Nastavit PIN organizátora';
+    msg.textContent = 'Tímto PINem zamkneš úpravy jmen, skupin, rozpisu a formátu skóre — příště je půjde změnit jen po zadání PINu. Nech pole prázdné a ulož, pokud chceš zámek vypnout.';
+    confirmBtn.textContent = 'Uložit';
+  } else {
+    title.textContent = 'Odemknout úpravy';
+    msg.textContent = 'Úpravy jmen, skupin, rozpisu a formátu skóre může provádět jen organizátor. Zadej PIN pro odemčení.';
+    confirmBtn.textContent = 'Odemknout';
+  }
+  overlay.classList.add('on');
+  setTimeout(function(){ input.focus(); }, 30);
+}
+function closePinModal(){
+  document.getElementById('pinOverlay').classList.remove('on');
+}
+function submitPinModal(){
+  var overlay=document.getElementById('pinOverlay');
+  var mode=overlay.dataset.mode;
+  var val=document.getElementById('pinInput').value.trim();
+  if(mode==='set'){
+    state.security.pin = val ? val : null;
+    unlocked = true;
+    scheduleSave();
+    updateLockUI();
+    closePinModal();
+  } else {
+    if(val && val===state.security.pin){
+      unlocked=true;
+      updateLockUI();
+      closePinModal();
+    } else {
+      document.getElementById('pinErr').textContent='Nesprávný PIN.';
+    }
+  }
+}
+document.getElementById('lockBtn').addEventListener('click', function(){
+  if(!isPinSet()) openPinModal('set');
+  else if(unlocked){ unlocked=false; updateLockUI(); }
+  else openPinModal('unlock');
+});
+document.getElementById('pinChangeBtn').addEventListener('click', function(){ openPinModal('set'); });
+document.getElementById('pinCancelBtn').addEventListener('click', closePinModal);
+document.getElementById('pinOverlay').addEventListener('click', function(e){ if(e.target===this) closePinModal(); });
+document.getElementById('pinConfirmBtn').addEventListener('click', submitPinModal);
+document.getElementById('pinInput').addEventListener('keydown', function(e){ if(e.key==='Enter') submitPinModal(); });
+
+function guardLockable(e){
+  if(!isPinSet() || unlocked) return;
+  if(!e.target.closest('.lockable')) return;
+  e.preventDefault();
+  e.stopPropagation();
+  openPinModal('unlock');
+}
+document.addEventListener('pointerdown', guardLockable, true);
+document.addEventListener('click', guardLockable, true);
+
+// ---------- step 5: bracket ----------
+var currentBracketView = 'main';
+
+function nextPow2(n){ var p=1; while(p<n) p*=2; return Math.max(2,p); }
+function seedOrderArray(n){
+  var result=[1], size=1;
+  while(size<n){
+    size*=2;
+    var next=[];
+    result.forEach(function(s){ next.push(s); next.push(size+1-s); });
+    result=next;
+  }
+  return result;
+}
+function assignSlots(list){
+  var M=list.length;
+  var N=nextPow2(Math.max(2,M));
+  var order=seedOrderArray(N);
+  var slots=new Array(N).fill(null);
+  for(var i=0;i<N;i++){
+    var seedNum=order[i];
+    if(seedNum<=M) slots[i]=list[seedNum-1];
+  }
+  // best-effort repair pass: avoid same-group pairings in round 1 where an
+  // alternative swap is available. Not a hard guarantee (rare edge cases
+  // with very few groups / high advance counts can make it unavoidable).
+  var pairs=N/2;
+  for(var p=0;p<pairs;p++){
+    var a=slots[p*2], b=slots[p*2+1];
+    if(a && b && a.group===b.group){
+      for(var q=0;q<pairs;q++){
+        if(q===p) continue;
+        var c=slots[q*2], d=slots[q*2+1];
+        if(c && c.group!==a.group && (!b || !d || b.group!==d.group)){
+          slots[p*2+1]=c; slots[q*2]=b; break;
+        }
+        if(d && d.group!==a.group && (!b || !c || b.group!==c.group)){
+          slots[p*2+1]=d; slots[q*2+1]=b; break;
+        }
+      }
+    }
+  }
+  return { slots:slots, size:N };
+}
+function effectiveSeedList(){
+  var adv = computeAdvancement();
+  var ov = state.bracketSeeding.order;
+  if(ov && ov.length===adv.seedList.length && ov.every(function(id){ return adv.seedList.some(function(s){ return s.id===id; }); })){
+    var byId={}; adv.seedList.forEach(function(s){ byId[s.id]=s; });
+    return ov.map(function(id){ return byId[id]; });
+  }
+  return adv.seedList;
+}
+
+function renderStep5(){
+  if(state.bracket && state.bracket.started){
+    document.getElementById('bracketSeedingCard').style.display='none';
+    document.getElementById('bracketPlayedCard').style.display='block';
+    showBracketView(currentBracketView);
+  } else {
+    document.getElementById('bracketSeedingCard').style.display='block';
+    document.getElementById('bracketPlayedCard').style.display='none';
+    renderSeedingCard();
+  }
+}
+
+function renderSeedingCard(){
+  var adv = computeAdvancement();
+  var warnEl = document.getElementById('bracketSeedWarn');
+  if(adv.seedList.length<2){
+    warnEl.style.display='block';
+    warnEl.textContent='Zatím nemá kdo postoupit — doplň výsledky ve skupinách nebo uprav počet postupujících v kroku 4.';
+  } else {
+    warnEl.style.display='none';
+  }
+  var incomplete = state.schedule.rounds.some(function(r){ return r.matches.some(function(m){ return !computeMatchOutcome(m, state.results[m.id], state.resultsConfig.format).played; }); });
+  if(incomplete && adv.seedList.length>=2){
+    warnEl.style.display='block';
+    warnEl.textContent='Skupinová fáze ještě není celá dohraná — pořadí (a tedy nasazení) se ještě může změnit.';
+  }
+  document.getElementById('startBracketBtn').disabled = adv.seedList.length<2;
+  document.getElementById('thirdPlaceChk').checked = state.bracket ? !!state.bracket.thirdPlace : true;
+
+  var list = effectiveSeedList();
+  var box = document.getElementById('bracketSeedList');
+  box.innerHTML='';
+  list.forEach(function(s, i){
+    var row=document.createElement('div');
+    row.className='seedrow';
+    row.dataset.id=s.id;
+    row.innerHTML =
+      '<span class="drag-handle">⠿</span>'+
+      '<span class="seednum">'+(i+1)+'.</span>'+
+      '<span class="seedname">'+escapeHtml(s.name)+'</span>'+
+      '<span class="seedgrp">Sk. '+s.group+'</span>';
+    box.appendChild(row);
+  });
+}
+(function(){
+  var container=document.getElementById('bracketSeedList');
+  container.addEventListener('pointerdown', function(e){
+    var handle=e.target.closest('.drag-handle');
+    if(!handle) return;
+    var row=handle.closest('.seedrow');
+    if(!row) return;
+    try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+    row.classList.add('dragging');
+    function move(ev){
+      var y=ev.clientY;
+      var rows=Array.prototype.slice.call(container.querySelectorAll('.seedrow:not(.dragging)'));
+      var target=null;
+      for(var i=0;i<rows.length;i++){
+        var rect=rows[i].getBoundingClientRect();
+        if(y<rect.top+rect.height/2){ target=rows[i]; break; }
+      }
+      if(target) container.insertBefore(row,target); else container.appendChild(row);
+    }
+    function up(){
+      row.classList.remove('dragging');
+      container.removeEventListener('pointermove',move);
+      container.removeEventListener('pointerup',up);
+      var ids=Array.prototype.slice.call(container.querySelectorAll('.seedrow')).map(function(r){ return r.dataset.id; });
+      state.bracketSeeding.order=ids;
+      renderSeedingCard();
+      scheduleSave();
+    }
+    container.addEventListener('pointermove',move);
+    container.addEventListener('pointerup',up);
+  });
+})();
+
+document.getElementById('startBracketBtn').addEventListener('click', function(){
+  var list=effectiveSeedList();
+  if(list.length<2) return;
+  var advList = computeAdvancement().consList;
+  var mainAssign = assignSlots(list);
+  var consAssign = assignSlots(advList);
+  state.bracket = {
+    started:true,
+    thirdPlace: document.getElementById('thirdPlaceChk').checked,
+    main: { slots:mainAssign.slots, size:mainAssign.size, winners:{} },
+    consolation: { slots:consAssign.slots, size:consAssign.size, winners:{} }
+  };
+  currentBracketView='main';
+  renderStep5();
+  scheduleSave();
+});
+document.getElementById('editSeedingBtn').addEventListener('click', function(){
+  if(state.bracket && (Object.keys(state.bracket.main.winners).length || Object.keys(state.bracket.consolation.winners).length)){
+    if(!confirm('V pavouku už jsou zapsané výsledky. Návrat k nasazení je ponechá bez vlivu na strom, ale nové spuštění pavouka je smaže. Pokračovat?')) return;
+  }
+  document.getElementById('bracketSeedingCard').style.display='block';
+  document.getElementById('bracketPlayedCard').style.display='none';
+  renderSeedingCard();
+});
+document.getElementById('regenBracketBtn').addEventListener('click', function(){
+  var hasResults = state.bracket && (Object.keys(state.bracket.main.winners).length || Object.keys(state.bracket.consolation.winners).length);
+  if(hasResults && !confirm('Tímto smažeš dosavadní průběh pavouku (zapsané výsledky zápasů v pavouku). Pokračovat?')) return;
+  var list=effectiveSeedList();
+  var advList = computeAdvancement().consList;
+  var mainAssign = assignSlots(list);
+  var consAssign = assignSlots(advList);
+  state.bracket = {
+    started:true,
+    thirdPlace: state.bracket ? state.bracket.thirdPlace : true,
+    main: { slots:mainAssign.slots, size:mainAssign.size, winners:{} },
+    consolation: { slots:consAssign.slots, size:consAssign.size, winners:{} }
+  };
+  renderStep5();
+  scheduleSave();
+});
+
+function resolveBracket(bracketKey){
+  var b = state.bracket[bracketKey];
+  var totalRounds = Math.log2(b.size);
+  var rounds=[];
+  for(var r=0;r<totalRounds;r++){
+    var matches=[];
+    var count = b.size/Math.pow(2,r+1);
+    for(var i=0;i<count;i++){
+      var matchId=bracketKey+'-r'+r+'-m'+i;
+      var home, away;
+      if(r===0){
+        home = b.slots[i*2]||null;
+        away = b.slots[i*2+1]||null;
+      } else {
+        home = rounds[r-1][i*2].winner;
+        away = rounds[r-1][i*2+1].winner;
+      }
+      var isBye = r===0 && ((home===null)!==(away===null));
+      var winner=null;
+      if(isBye){ winner = home||away; }
+      else if(home && away){
+        var wid=b.winners[matchId];
+        if(wid && home.id===wid) winner=home;
+        else if(wid && away.id===wid) winner=away;
+      }
+      matches.push({ matchId:matchId, round:r, idx:i, home:home, away:away, winner:winner, isBye:isBye });
+    }
+    rounds.push(matches);
+  }
+  return rounds;
+}
+function roundLabel(r, totalRounds){
+  var fromEnd = totalRounds-1-r;
+  if(fromEnd===0) return 'Finále';
+  if(fromEnd===1) return 'Semifinále';
+  if(fromEnd===2) return 'Čtvrtfinále';
+  return 'Kolo '+(r+1);
+}
+function setBracketWinner(bracketKey, matchId, playerId){
+  state.bracket[bracketKey].winners[matchId]=playerId;
+  renderBracketView(bracketKey);
+  renderFinalResults();
+  scheduleSave();
+}
+function bplayerRow(bracketKey, match, side){
+  var p = side==='home' ? match.home : match.away;
+  var row=document.createElement('div');
+  row.className='bplayer';
+  if(!p){
+    row.classList.add(match.isBye ? 'bye' : 'tbd');
+    row.textContent = match.isBye ? '(volný los)' : 'čeká na soupeře…';
+    return row;
+  }
+  var isWinner = match.winner && match.winner.id===p.id;
+  var isDecidedLoser = match.winner && match.winner.id!==p.id;
+  if(isWinner) row.classList.add('winner');
+  if(isDecidedLoser) row.classList.add('loser');
+  row.innerHTML = '<span>'+escapeHtml(p.name)+'</span>'+(p.group?'<span class="bpgrp">Sk.'+p.group+'</span>':'');
+  var otherP = side==='home' ? match.away : match.home;
+  if(!match.isBye && otherP){
+    row.addEventListener('click', function(){ setBracketWinner(bracketKey, match.matchId, p.id); });
+  }
+  return row;
+}
+function buildBracketColumnsDOM(bracketKey){
+  var rounds = resolveBracket(bracketKey);
+  var totalRounds = rounds.length;
+  var scroll=document.createElement('div'); scroll.className='bracket-scroll';
+  var cols=document.createElement('div'); cols.className='bracket-cols';
+  rounds.forEach(function(roundMatches, r){
+    var col=document.createElement('div'); col.className='bracket-col';
+    var title=document.createElement('div'); title.className='bcol-title'; title.textContent=roundLabel(r, totalRounds);
+    col.appendChild(title);
+    roundMatches.forEach(function(m){
+      var card=document.createElement('div'); card.className='bmatch'+(m.winner?' decided':'');
+      card.appendChild(bplayerRow(bracketKey, m, 'home'));
+      card.appendChild(bplayerRow(bracketKey, m, 'away'));
+      col.appendChild(card);
+    });
+    cols.appendChild(col);
+  });
+  // third-place match (main bracket only), shown alongside the final
+  if(bracketKey==='main' && state.bracket.thirdPlace && totalRounds>=2){
+    var semis = rounds[totalRounds-2];
+    if(semis.length===2){
+      var loser = function(m){ if(!m.winner) return null; return m.home.id===m.winner.id ? m.away : m.home; };
+      var homeP = loser(semis[0]), awayP = loser(semis[1]);
+      var matchId='main-3rd';
+      var wid = state.bracket.main.winners[matchId];
+      var winner=null;
+      if(homeP && wid===homeP.id) winner=homeP;
+      else if(awayP && wid===awayP.id) winner=awayP;
+      var pseudo={ matchId:matchId, home:homeP, away:awayP, winner:winner, isBye:false };
+      var col3=document.createElement('div'); col3.className='bracket-col b3rd';
+      var title3=document.createElement('div'); title3.className='bcol-title'; title3.textContent='O 3. místo';
+      col3.appendChild(title3);
+      var card3=document.createElement('div'); card3.className='bmatch'+(winner?' decided':'');
+      card3.appendChild(bplayerRow('main', pseudo, 'home'));
+      card3.appendChild(bplayerRow('main', pseudo, 'away'));
+      col3.appendChild(card3);
+      cols.appendChild(col3);
+    }
+  }
+  scroll.appendChild(cols);
+  return scroll;
+}
+function renderBracketView(bracketKey){
+  var containerId = bracketKey==='main' ? 'mainBracketView' : 'consBracketView';
+  var box=document.getElementById(containerId);
+  box.innerHTML='';
+  if(!state.bracket){ return; }
+  box.appendChild(buildBracketColumnsDOM(bracketKey));
+}
+function showBracketView(view){
+  currentBracketView=view;
+  document.getElementById('viewMainBracketBtn').classList.toggle('on', view==='main');
+  document.getElementById('viewConsBracketBtn').classList.toggle('on', view==='cons');
+  document.getElementById('viewFinalResultsBtn').classList.toggle('on', view==='final');
+  document.getElementById('mainBracketView').style.display = view==='main' ? 'block':'none';
+  document.getElementById('consBracketView').style.display = view==='cons' ? 'block':'none';
+  document.getElementById('finalResultsView').style.display = view==='final' ? 'block':'none';
+  if(view==='main') renderBracketView('main');
+  else if(view==='cons') renderBracketView('consolation');
+  else renderFinalResults();
+}
+document.getElementById('viewMainBracketBtn').addEventListener('click', function(){ showBracketView('main'); });
+document.getElementById('viewConsBracketBtn').addEventListener('click', function(){ showBracketView('cons'); });
+document.getElementById('viewFinalResultsBtn').addEventListener('click', function(){ showBracketView('final'); });
+
+function renderFinalResults(){
+  var box=document.getElementById('finalResultsView');
+  if(!box) return;
+  box.innerHTML='';
+  if(!state.bracket){ box.innerHTML='<div class="rndempty">Pavouk ještě neběží.</div>'; return; }
+  var mainRounds = resolveBracket('main');
+  var finalM = mainRounds[mainRounds.length-1][0];
+  var card=document.createElement('div'); card.className='finalcard';
+  function row(pos, player, note){
+    var r=document.createElement('div'); r.className='finalrow';
+    r.innerHTML = '<span class="finalpos">'+pos+'</span><span class="finalname">'+(player?escapeHtml(player.name)+(player.group?' <span class="finalgrp">(sk. '+player.group+')</span>':''):'<span class="finalgrp">'+note+'</span>')+'</span>';
+    card.appendChild(r);
+  }
+  if(finalM.winner){
+    var loserFinal = finalM.home.id===finalM.winner.id ? finalM.away : finalM.home;
+    row('1.', finalM.winner);
+    row('2.', loserFinal);
+    if(state.bracket.thirdPlace){
+      var semis = mainRounds[mainRounds.length-2];
+      var l0 = semis[0].winner ? (semis[0].home.id===semis[0].winner.id?semis[0].away:semis[0].home) : null;
+      var l1 = semis[1].winner ? (semis[1].home.id===semis[1].winner.id?semis[1].away:semis[1].home) : null;
+      var wid3 = state.bracket.main.winners['main-3rd'];
+      if(wid3 && l0 && l1){
+        var w3 = l0.id===wid3 ? l0 : l1;
+        var lo3 = l0.id===wid3 ? l1 : l0;
+        row('3.', w3);
+        row('4.', lo3);
+      } else {
+        row('3.–4.', null, 'zápas o 3. místo ještě neproběhl');
+      }
+    } else if(mainRounds.length>=2){
+      var semis2 = mainRounds[mainRounds.length-2];
+      var sl0 = semis2[0].winner ? (semis2[0].home.id===semis2[0].winner.id?semis2[0].away:semis2[0].home) : null;
+      var sl1 = semis2[1].winner ? (semis2[1].home.id===semis2[1].winner.id?semis2[1].away:semis2[1].home) : null;
+      if(sl0 && sl1){
+        row('3.–4.', sl0, '');
+        card.lastChild.querySelector('.finalname').innerHTML += ' <span class="finalgrp">(sdílené 3. místo)</span>';
+        row('3.–4.', sl1, '');
+        card.lastChild.querySelector('.finalname').innerHTML += ' <span class="finalgrp">(sdílené 3. místo)</span>';
+      }
+    }
+  } else {
+    row('1.', null, 'finále hlavního pavouka ještě neproběhlo');
+  }
+  box.appendChild(card);
+
+  if(state.bracket.consolation && state.bracket.consolation.size>=2){
+    var consRounds = resolveBracket('consolation');
+    var finalC = consRounds[consRounds.length-1][0];
+    var card2=document.createElement('div'); card2.className='finalcard';
+    var hd=document.createElement('div'); hd.className='lbl'; hd.style.marginBottom='8px'; hd.textContent='Pavouk útěchy';
+    card2.appendChild(hd);
+    if(finalC.winner){
+      var loserC = finalC.home.id===finalC.winner.id ? finalC.away : finalC.home;
+      (function(){ var r=document.createElement('div'); r.className='finalrow'; r.innerHTML='<span class="finalpos">1.</span><span class="finalname">'+escapeHtml(finalC.winner.name)+'</span>'; card2.appendChild(r); })();
+      (function(){ var r=document.createElement('div'); r.className='finalrow'; r.innerHTML='<span class="finalpos">2.</span><span class="finalname">'+escapeHtml(loserC.name)+'</span>'; card2.appendChild(r); })();
+    } else {
+      var r2=document.createElement('div'); r2.className='finalnote'; r2.textContent='Finále pavouka útěchy ještě neproběhlo.'; card2.appendChild(r2);
+    }
+    box.appendChild(card2);
+  }
+}
+document.getElementById('thirdPlaceChk').addEventListener('change', function(e){
+  if(state.bracket) state.bracket.thirdPlace = e.target.checked;
+  scheduleSave();
+});
+
+// ---------- step 6: export ----------
+function renderStep6(){ /* static content — nothing to compute up front */ }
+
+function buildPrintBracketHtml(bracketKey, blank){
+  var rounds = resolveBracket(bracketKey);
+  var totalRounds = rounds.length;
+  var html='';
+  rounds.forEach(function(roundMatches, r){
+    html += '<h3>'+roundLabel(r, totalRounds)+'</h3>';
+    roundMatches.forEach(function(m){
+      var homeName = m.home ? m.home.name : (m.isBye ? '—' : '?');
+      var awayName = m.away ? m.away.name : (m.isBye ? 'volný los' : '?');
+      var scoreTxt = blank ? '____________' : (m.winner ? ('vítěz: '+m.winner.name) : (m.isBye ? '' : ''));
+      html += '<div class="pmatchline"><span>'+escapeHtml(homeName)+' – '+escapeHtml(awayName)+'</span><span class="pscoreblank">'+escapeHtml(scoreTxt)+'</span></div>';
+    });
+  });
+  if(bracketKey==='main' && state.bracket.thirdPlace && totalRounds>=2){
+    var semis=rounds[totalRounds-2];
+    if(semis.length===2){
+      var loser=function(m){ if(!m.winner) return null; return m.home.id===m.winner.id?m.away:m.home; };
+      var homeP=loser(semis[0]), awayP=loser(semis[1]);
+      var wid=state.bracket.main.winners['main-3rd'];
+      var winner=null;
+      if(homeP&&wid===homeP.id) winner=homeP; else if(awayP&&wid===awayP.id) winner=awayP;
+      html += '<h3>O 3. místo</h3><div class="pmatchline"><span>'+(homeP?escapeHtml(homeP.name):'čeká…')+' – '+(awayP?escapeHtml(awayP.name):'čeká…')+'</span><span class="pscoreblank">'+(blank?'____________':(winner?('vítěz: '+escapeHtml(winner.name)):''))+'</span></div>';
+    }
+  }
+  return html;
+}
+function buildPrintHTML(blank){
+  var html = '<h1>Tenisový turnaj</h1><div class="psub">'+(blank?'Prázdná verze k ručnímu zápisu':'Aktuální stav')+' — vytištěno '+new Date().toLocaleDateString('cs-CZ')+'</div>';
+  var byId={}; state.players.forEach(function(p){ byId[p.id]=p; });
+
+  if(state.groups.length){
+    html += '<h2>Skupiny a rozpis</h2>';
+    state.groups.forEach(function(ids, gi){
+      var letter=String.fromCharCode(65+gi);
+      html += '<div class="pgroupblock"><h3>Skupina '+letter+'</h3>';
+      var groupMatches=[];
+      state.schedule.rounds.forEach(function(round, ri){
+        round.matches.forEach(function(m){ if(m.group===letter) groupMatches.push({ round:ri, m:m }); });
+      });
+      groupMatches.forEach(function(gm){
+        var m=gm.m;
+        var scoreTxt = blank ? '____ : ____' : ((function(){ var l=matchStatusLabel(m); return l?l.text:'____ : ____'; })());
+        html += '<div class="pmatchline"><span>Kolo '+(gm.round+1)+': '+escapeHtml(m.home.name)+' – '+escapeHtml(m.away.name)+'</span><span class="pscoreblank">'+escapeHtml(scoreTxt)+'</span></div>';
+      });
+      if(blank){
+        html += '<table><thead><tr><th>#</th><th>Hráč</th><th>Výhry</th><th>Gamy</th></tr></thead><tbody>';
+        ids.forEach(function(pid, i){ html += '<tr><td>'+(i+1)+'</td><td>'+escapeHtml(byId[pid]?byId[pid].name:'')+'</td><td></td><td></td></tr>'; });
+        html += '</tbody></table>';
+      } else {
+        var ranking = rankGroup(letter);
+        html += '<table><thead><tr><th>#</th><th>Hráč</th><th>Z</th><th>Gamy</th></tr></thead><tbody>';
+        ranking.order.forEach(function(row, pos){
+          var st=ranking.stats[row.player.id];
+          html += '<tr><td>'+(pos+1)+'</td><td>'+escapeHtml(row.player.name)+'</td><td>'+st.wins+':'+st.losses+'</td><td>'+st.gamesWon+':'+st.gamesLost+'</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+    });
+  }
+
+  if(state.bracket && state.bracket.started){
+    html += '<div class="ppagebreak"></div><h2>Pavouk</h2>'+buildPrintBracketHtml('main', blank);
+    if(state.bracket.consolation && state.bracket.consolation.size>=2){
+      html += '<h2>Pavouk útěchy</h2>'+buildPrintBracketHtml('consolation', blank);
+    }
+  }
+  return html;
+}
+function printTournament(blank){
+  document.getElementById('printArea').innerHTML = buildPrintHTML(blank);
+  setTimeout(function(){ window.print(); }, 50);
+}
+document.getElementById('printFullBtn').addEventListener('click', function(){ printTournament(false); });
+document.getElementById('printBlankBtn').addEventListener('click', function(){ printTournament(true); });
+
+function ensureHtml2Canvas(cb){
+  if(window.html2canvas){ cb(); return; }
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+  s.onload=cb;
+  s.onerror=function(){ alert('Nepodařilo se načíst knihovnu pro export obrázku — zkontroluj připojení k internetu.'); };
+  document.head.appendChild(s);
+}
+document.getElementById('exportPngBtn').addEventListener('click', function(){
+  if(!state.bracket || !state.bracket.started){ alert('Nejdřív spusť pavouka v kroku 5.'); return; }
+  ensureHtml2Canvas(function(){
+    var offscreen=document.createElement('div');
+    offscreen.style.cssText='position:absolute;left:-10000px;top:0;background:#fff;padding:20px;width:960px;font-family:"Plus Jakarta Sans",sans-serif';
+    offscreen.appendChild(buildBracketColumnsDOM('main'));
+    document.body.appendChild(offscreen);
+    html2canvas(offscreen, { backgroundColor:'#ffffff', scale:2 }).then(function(canvas){
+      var link=document.createElement('a');
+      link.download='pavouk.png';
+      link.href=canvas.toDataURL('image/png');
+      link.click();
+      document.body.removeChild(offscreen);
+    }).catch(function(){
+      document.body.removeChild(offscreen);
+      alert('Export obrázku se nepodařil.');
+    });
+  });
+});
+
+document.getElementById('exportJsonBtn').addEventListener('click', function(){
+  var blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+  var url = URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  link.download = 'turnaj-'+new Date().toISOString().slice(0,10)+'.json';
+  link.href=url;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importJsonBtn').addEventListener('click', function(){
+  document.getElementById('importJsonFile').click();
+});
+document.getElementById('importJsonFile').addEventListener('change', function(e){
+  var file = e.target.files[0];
+  e.target.value='';
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(evt){
+    var loaded;
+    try{ loaded = JSON.parse(evt.target.result); }
+    catch(err){ alert('Soubor se nepodařilo načíst — není to platný JSON.'); return; }
+    if(!loaded || typeof loaded!=='object' || !Array.isArray(loaded.players)){
+      alert('Soubor nevypadá jako platná záloha turnaje.');
+      return;
+    }
+    if(!confirm('Nahrání zálohy přepíše aktuální rozjetý turnaj v tomto prohlížeči. Pokračovat?')) return;
+    state.step = loaded.step || 1;
+    state.players = loaded.players || [];
+    Object.assign(state.groupConfig, loaded.groupConfig || {});
+    state.groups = loaded.groups || [];
+    state.schedule = loaded.schedule || { sig:null, rounds:[] };
+    Object.assign(state.resultsConfig, loaded.resultsConfig || {});
+    state.results = loaded.results || {};
+    state.tieOverrides = loaded.tieOverrides || {};
+    state.bracketSeeding = loaded.bracketSeeding || { order:null };
+    state.bracket = loaded.bracket || null;
+    if(loaded.security) state.security.pin = loaded.security.pin || null;
+    unlocked = !state.security.pin;
+    // an imported backup is a different tournament's data — don't keep
+    // silently pushing it into whatever cloud row this device happened to
+    // be connected to (that would clobber someone else's live tournament).
+    remote.id = null;
+    saveRemoteRef();
+    history.replaceState(null, '', location.pathname);
+    saveNow(); // reload() below can't wait on the debounced save, or it reloads before anything hits localStorage
+    location.reload();
+  };
+  reader.readAsText(file);
+});
+
+function csvEscape(s){
+  s = String(s==null ? '' : s);
+  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+document.getElementById('exportCsvBtn').addEventListener('click', function(){
+  var rows = [['Skupina','Kolo','Domácí','Hosté','Skóre','Vítěz']];
+  state.schedule.rounds.forEach(function(round, ri){
+    round.matches.forEach(function(m){
+      var label = matchStatusLabel(m);
+      var result = state.results[m.id];
+      var scoreTxt = label ? label.text : '';
+      var winnerName = '';
+      if(result){
+        var outcome = computeMatchOutcome(m, result, state.resultsConfig.format);
+        if(outcome.played) winnerName = outcome.winnerId===m.home.id ? m.home.name : m.away.name;
+      }
+      rows.push([m.group, ri+1, m.home.name, m.away.name, scoreTxt, winnerName]);
+    });
+  });
+  var csv = rows.map(function(r){ return r.map(csvEscape).join(','); }).join('\r\n');
+  var blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  link.download = 'vysledky-'+new Date().toISOString().slice(0,10)+'.csv';
+  link.href=url;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+// ---------- init ----------
+function setSeedingUiOnly(mode){
+  ['Snake','Random','Manual'].forEach(function(m){
+    document.getElementById('seed'+m+'Btn').classList.toggle('on', m.toLowerCase()===mode);
+  });
+  document.getElementById('reshuffleSeedBtn').style.display = mode==='random' ? 'inline-block':'none';
+}
+function finishInit(){
+  if(state.players.length){
+    document.getElementById('importTa').value = state.players.map(function(p){ return p.name; }).join('\n');
+    document.getElementById('liveCount').textContent = state.players.length;
+  }
+  renderPlayerList();
+  renderDupWarn();
+  updateTabs();
+  updateLockUI();
+  updateSyncUI();
+  if((state.step===2 || state.step===3 || state.step===4 || state.step===5 || state.step===6) && state.players.length>=MIN_PLAYERS){
+    renderStep2();
+    setSeedingUiOnly(gc.seeding);
+  }
+  if((state.step===3 || state.step===4 || state.step===5 || state.step===6) && state.groups.length>0){
+    renderStep3();
+  }
+  if(state.step===4 && hasSchedule()){
+    renderStep4();
+  }
+  if((state.step===5 || state.step===6) && hasSchedule()){
+    renderStep5();
+  }
+  if(state.step===6){
+    renderStep6();
+  }
+  if(remote.id) subscribeRealtime();
+}
+
+// `?id=` in the URL means "open this shared tournament" — always fetch it
+// fresh from Supabase, then subscribe to realtime for further changes
+// (subscription is started from finishInit()). No `?id=` just falls back
+// to whatever loadState() already restored from localStorage.
+var urlId = new URLSearchParams(location.search).get('id');
+if(urlId && sb){
+  setSyncStatus('', '☁️ Načítám turnaj z cloudu…');
+  sb.from('tournaments').select('*').eq('id', urlId).single().then(function(res){
+    if(res.error || !res.data){
+      setSyncStatus('error', '⚠️ Turnaj se nepodařilo načíst — pokračuju s tím, co je uložené lokálně.');
+    } else {
+      var loaded = res.data.data;
+      if(loaded && typeof loaded==='object' && Array.isArray(loaded.players)){
+        state.step = loaded.step || 1;
+        state.players = loaded.players || [];
+        Object.assign(state.groupConfig, loaded.groupConfig || {});
+        state.groups = loaded.groups || [];
+        state.schedule = loaded.schedule || { sig:null, rounds:[] };
+        Object.assign(state.resultsConfig, loaded.resultsConfig || {});
+        state.results = loaded.results || {};
+        state.tieOverrides = loaded.tieOverrides || {};
+        state.bracketSeeding = loaded.bracketSeeding || { order:null };
+        state.bracket = loaded.bracket || null;
+        if(loaded.security) state.security.pin = loaded.security.pin || null;
+        unlocked = !state.security.pin;
+      }
+      remote.id = urlId;
+      saveRemoteRef();
+      try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+      setSyncStatus('online', '☁️ Online — načteno z cloudu');
+    }
+    if(remote.id && new URLSearchParams(location.search).get('id')!==remote.id){
+      history.replaceState(null, '', urlForTournament(remote.id));
+    }
+    finishInit();
+  }).catch(function(){
+    setSyncStatus('error', '⚠️ Turnaj se nepodařilo načíst — pokračuju s tím, co je uložené lokálně.');
+    finishInit();
+  });
+} else {
+  if(remote.id && !urlId){
+    history.replaceState(null, '', urlForTournament(remote.id));
+  }
+  finishInit();
+}
+
+})();
+</script>
+</body>
+</html>
