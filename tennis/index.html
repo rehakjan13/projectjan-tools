@@ -256,6 +256,7 @@ body.pin-active.pin-is-locked .lockable:hover{opacity:.75}
     <span class="syncstatus" id="syncStatus">☁️ Lokálně (bez cloudu)</span>
     <button class="bghost lockable" id="createRemoteBtn" type="button" style="padding:0">Založit online turnaj</button>
     <button class="bghost" id="copyLinkBtn" type="button" style="display:none;padding:0">Kopírovat odkaz</button>
+    <button class="bghost" id="openDisplayBtn" type="button" style="display:none;padding:0">📺 Otevřít displej</button>
     <button class="bghost lockable" id="disconnectRemoteBtn" type="button" style="display:none;padding:0">Odpojit cloud</button>
   </div>
   <div class="synctoast" id="syncToast" style="display:none"></div>
@@ -590,15 +591,18 @@ function updateSyncUI(){
   var createBtn=document.getElementById('createRemoteBtn');
   var copyBtn=document.getElementById('copyLinkBtn');
   var discBtn=document.getElementById('disconnectRemoteBtn');
+  var dispBtn=document.getElementById('openDisplayBtn');
   if(!createBtn) return;
   if(remote.id){
     createBtn.style.display='none';
     copyBtn.style.display='inline-block';
     discBtn.style.display='inline-block';
+    dispBtn.style.display='inline-block';
   } else {
     createBtn.style.display='inline-block';
     copyBtn.style.display='none';
     discBtn.style.display='none';
+    dispBtn.style.display='none';
   }
 }
 function urlForTournament(id){
@@ -606,6 +610,14 @@ function urlForTournament(id){
   url.searchParams.set('id', id);
   return url.toString();
 }
+function displayUrlForTournament(id){
+  var url = new URL(location.origin + '/tennis/display/');
+  url.searchParams.set('id', id);
+  return url.toString();
+}
+document.getElementById('openDisplayBtn').addEventListener('click', function(){
+  window.open(displayUrlForTournament(remote.id), '_blank');
+});
 var lastPushNonce = null;
 function pushRemote(){
   if(!sb || !remote.id) return;
