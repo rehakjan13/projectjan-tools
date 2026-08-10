@@ -23,8 +23,12 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#F3F4F6;col
 h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
 .sub{font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:1.4rem}
 
-.steps{display:flex;gap:8px;margin-bottom:1.4rem}
-.step{flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);font-size:12.5px;font-weight:600;color:var(--hint);cursor:pointer;transition:all .13s}
+.steps-wrap{position:relative;margin-bottom:1.4rem}
+.steps{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;scrollbar-width:none}
+.steps::-webkit-scrollbar{display:none}
+.steps-fade{position:absolute;top:0;right:0;bottom:0;width:30px;background:linear-gradient(to right,transparent,#F3F4F6);pointer-events:none;transition:opacity .15s}
+.steps-fade.hidden{opacity:0}
+.step{flex:1 0 auto;min-width:104px;scroll-snap-align:start;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);font-size:12.5px;font-weight:600;color:var(--hint);cursor:pointer;transition:all .13s}
 .step.on{border-color:var(--p);background:var(--pl);color:var(--pt)}
 .step.done{color:var(--g)}
 .step.locked{cursor:not-allowed;opacity:.6}
@@ -111,6 +115,10 @@ input:focus,select:focus{border-color:var(--p);background:#fff}
 .syncstatus.online{color:var(--g);font-weight:600}
 .syncstatus.error{color:var(--r);font-weight:600}
 .synctoast{background:var(--pl);border:1px solid #DDD6FE;color:var(--pt);font-size:12px;font-weight:600;border-radius:9px;padding:8px 13px;margin-bottom:12px;text-align:center}
+@media(max-width:480px){
+  .lockbar,.syncbar{justify-content:flex-start}
+  .lockbar .saved-note{flex:0 0 auto}
+}
 
 .summarybar{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:.9rem}
 .sitem{flex:1;min-width:110px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
@@ -261,13 +269,16 @@ body.pin-active.pin-is-locked .lockable:hover{opacity:.75}
   </div>
   <div class="synctoast" id="syncToast" style="display:none"></div>
 
-  <div class="steps">
-    <div class="step on" data-step="1" id="tabStep1"><span class="stepnum">1</span>Import hráčů</div>
-    <div class="step locked" data-step="2" id="tabStep2"><span class="stepnum">2</span>Nastavení skupin</div>
-    <div class="step locked" data-step="3" id="tabStep3"><span class="stepnum">3</span>Rozpis zápasů</div>
-    <div class="step locked" data-step="4" id="tabStep4"><span class="stepnum">4</span>Výsledky</div>
-    <div class="step locked" data-step="5" id="tabStep5"><span class="stepnum">5</span>Pavouk</div>
-    <div class="step" data-step="6" id="tabStep6"><span class="stepnum">6</span>Export</div>
+  <div class="steps-wrap">
+    <div class="steps" id="stepsScroll">
+      <div class="step on" data-step="1" id="tabStep1"><span class="stepnum">1</span>Import hráčů</div>
+      <div class="step locked" data-step="2" id="tabStep2"><span class="stepnum">2</span>Nastavení skupin</div>
+      <div class="step locked" data-step="3" id="tabStep3"><span class="stepnum">3</span>Rozpis zápasů</div>
+      <div class="step locked" data-step="4" id="tabStep4"><span class="stepnum">4</span>Výsledky</div>
+      <div class="step locked" data-step="5" id="tabStep5"><span class="stepnum">5</span>Pavouk</div>
+      <div class="step" data-step="6" id="tabStep6"><span class="stepnum">6</span>Export</div>
+    </div>
+    <div class="steps-fade" id="stepsFade"></div>
   </div>
 
   <!-- STEP 1 -->
@@ -1084,6 +1095,19 @@ function rankGroup(groupLetter){
 function hasSchedule(){
   return state.schedule.rounds.some(function(r){ return r.matches.length>0; });
 }
+// steps bar can overflow on narrow screens — hide the "scroll for more"
+// edge fade once you're scrolled all the way to the end, and keep the
+// active tab scrolled into view when navigation changes it programmatically.
+(function(){
+  var scroller=document.getElementById('stepsScroll'), fade=document.getElementById('stepsFade');
+  function updateFade(){
+    var atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
+    fade.classList.toggle('hidden', atEnd);
+  }
+  scroller.addEventListener('scroll', updateFade);
+  window.addEventListener('resize', updateFade);
+  updateFade();
+})();
 function updateTabs(){
   var t1=document.getElementById('tabStep1'), t2=document.getElementById('tabStep2'), t3=document.getElementById('tabStep3'), t4=document.getElementById('tabStep4'), t5=document.getElementById('tabStep5'), t6=document.getElementById('tabStep6');
   t1.classList.toggle('on', state.step===1);
@@ -1106,6 +1130,8 @@ function updateTabs(){
   document.getElementById('step4').classList.toggle('on', state.step===4);
   document.getElementById('step5').classList.toggle('on', state.step===5);
   document.getElementById('step6').classList.toggle('on', state.step===6);
+  var activeTab=document.getElementById('tabStep'+state.step);
+  if(activeTab) activeTab.scrollIntoView({ block:'nearest', inline:'nearest', behavior:'smooth' });
 }
 
 // ---------- rendering: player list ----------
