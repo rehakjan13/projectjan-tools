@@ -424,6 +424,23 @@ function calcMixPrice(base_ratio,base_price,hard_ratio,hard_price,thinners){
   return hasPrices&&base_price?(totalCost/totalW):null;
 }
 
+function computeMix(pdens,psc,hratio,hdens,hsc,thinners){
+  // Volume-weighted density and solid content of the sprayed mixture
+  // (base + hardener + thinners), not just the base paint — the wet film
+  // that actually lands on the surface is the whole mix, so that's what
+  // consumption has to be computed from.
+  var totalWeight=100, totalVolume=100/pdens, totalSolidVolume=(100/pdens)*(psc/100);
+  if(hratio>0 && hdens>0 && hsc>0){
+    totalWeight+=hratio;
+    totalVolume+=hratio/hdens;
+    totalSolidVolume+=(hratio/hdens)*(hsc/100);
+  }
+  thinners.forEach(function(t){
+    if(t.w>0 && t.d>0){ totalWeight+=t.w; totalVolume+=t.w/t.d; } // thinners contribute 0 solids
+  });
+  return { density: totalWeight/totalVolume, sc: totalSolidVolume/totalVolume };
+}
+
 function calculate(){
   var area=1;
   var layers=document.querySelectorAll('.layer');
@@ -439,39 +456,45 @@ function calculate(){
     var pprice=parseFloat(document.getElementById('pprice-'+lid).value)||0;
     var hratio=parseFloat(document.getElementById('hratio-'+lid).value)||0;
     var hdens=parseFloat(document.getElementById('hdens-'+lid).value)||0;
+    var hsc=parseFloat(document.getElementById('hsc-'+lid).value)||0;
     var hprice=parseFloat(document.getElementById('hprice-'+lid).value)||0;
     var tnom=parseFloat(document.getElementById('tnom-'+lid).value)||0;
     var tmin=parseFloat(document.getElementById('tmin-'+lid).value)||0;
     var tmax=parseFloat(document.getElementById('tmax-'+lid).value)||0;
     var thinners=getThinners(lid);
     if(!pdens||!psc||!tnom){rows+='<tr><td colspan="7" style="color:#DC2626;font-size:12px;padding:10px 1rem">'+name+' — missing density, solid content or dry film thickness</td></tr>';return;}
-    var sc=psc/100;
+    if(hratio>0 && (!hdens||!hsc)){rows+='<tr><td colspan="7" style="color:#DC2626;font-size:12px;padding:10px 1rem">'+name+' — hardener has a mix ratio but is missing density or solid content</td></tr>';return;}
+    var mix=computeMix(pdens,psc,hratio,hdens,hsc,thinners);
+    var sc=mix.sc;
     var wetVol=tnom/(sc*1000000)*1000;
-    var consKgM2=wetVol*pdens;
+    var consKgM2=wetVol*mix.density;
     var effM2Kg=1/consKgM2;
     var consKgArea=consKgM2*area;
     var consGM2=consKgM2*1000;
     var mixPrice=calcMixPrice(100,pprice||null,hratio,hprice||null,thinners);
     var priceM2=mixPrice?consKgM2*mixPrice:null;
     var priceTotalArea=mixPrice?consKgArea*mixPrice:null;
-    var consMin=tmin?(tmin/(sc*1000000)*1000*pdens*1000):null;
-    var consMax=tmax?(tmax/(sc*1000000)*1000*pdens*1000):null;
+    var consMin=tmin?(tmin/(sc*1000000)*1000*mix.density*1000):null;
+    var consMax=tmax?(tmax/(sc*1000000)*1000*mix.density*1000):null;
     if(priceTotalArea){totalCostSystem+=priceTotalArea;hasSystemCost=true;}
     systemEfficiency=0;
     layerResults.push({name:name,consGM2:consGM2,effM2Kg:effM2Kg,consKgArea:consKgArea,mixPrice:mixPrice,priceM2:priceM2,priceTotalArea:priceTotalArea,consMin:consMin,consMax:consMax});
   });
   var resHtml='';
-  if(layerResults.length){
+  if(layerResults.length||rows){
     // Top metrics: efficiency and price per m² per layer
-    resHtml+='<div class="metrics-grid">';
-    layerResults.forEach(function(lr){
-      resHtml+='<div class="metric"><div class="metric-lbl">'+lr.name+' — efficiency</div><div class="metric-val">'+lr.effM2Kg.toFixed(2)+'</div><div class="metric-unit">m²/kg</div></div>';
-      if(lr.priceM2!=null){resHtml+='<div class="metric"><div class="metric-lbl">'+lr.name+' — price</div><div class="metric-val">'+lr.priceM2.toFixed(3)+'</div><div class="metric-unit">€/m²</div></div>';}
-    });
-    resHtml+='</div>';
+    if(layerResults.length){
+      resHtml+='<div class="metrics-grid">';
+      layerResults.forEach(function(lr){
+        resHtml+='<div class="metric"><div class="metric-lbl">'+lr.name+' — efficiency</div><div class="metric-val">'+lr.effM2Kg.toFixed(2)+'</div><div class="metric-unit">m²/kg</div></div>';
+        if(lr.priceM2!=null){resHtml+='<div class="metric"><div class="metric-lbl">'+lr.name+' — price</div><div class="metric-val">'+lr.priceM2.toFixed(3)+'</div><div class="metric-unit">€/m²</div></div>';}
+      });
+      resHtml+='</div>';
+    }
     // Table
     resHtml+='<div class="res-card"><div class="res-card-head"><span class="layer-dot"></span><span>Layer breakdown — consumption per m²</span></div>';
     resHtml+='<table><thead><tr><th>Layer</th><th>g/m²</th><th>m²/kg</th><th>Mix price</th><th>€/m²</th><th>€ for '+area+' m²</th></tr></thead><tbody>';
+    resHtml+=rows;
     var totalPriceM2=0;var totalConsGm2=0;var hasCost=false;
     layerResults.forEach(function(lr){
       var mp=lr.mixPrice?lr.mixPrice.toFixed(2)+' €/kg':'—';
