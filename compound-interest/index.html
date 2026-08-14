@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compound Interest Calculator</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="description" content="A compound interest calculator that shows what you actually keep — after fund fees and after inflation.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Compound Interest Calculator — Project Jan">
+<meta property="og:description" content="See what compounding really gives you — after fund fees and after inflation. Live chart, honest numbers, no Calculate button.">
+<meta property="og:image" content="https://projectjan.cz/favicon.png">
+<meta property="og:url" content="https://projectjan.cz/compound-interest/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Compound Interest Calculator — Project Jan">
+<meta name="twitter:description" content="See what compounding really gives you — after fund fees and after inflation.">
+<meta name="twitter:image" content="https://projectjan.cz/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6D28D9;--pl:#EDE9FE;--pt:#26215C;
+  --o:#C2410C;--ol:#FFF7ED;--ot:#7C2D12;
+  --g:#15803D;--gl:#DCFCE7;--gt:#14532D;
+  --r:#DC2626;--rl:#FEF2F2;--rt:#7F1D1D;
+  --grad:linear-gradient(135deg,#6D28D9 0%,#9333EA 50%,#C2410C 100%);
+  --border:#E5E7EB;--bg:#F9FAFB;--card:#fff;--text:#111827;--muted:#6B7280;--hint:#9CA3AF;
+  /* chart series */
+  --c-init:#94A3B8;--c-contrib:#7C3AED;--c-growth:#16A34A;--c-fee:#F87171;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#F3F4F6;color:var(--text);min-height:100vh;padding:1.75rem 1rem 5rem;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto}
+.mn{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.back{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--hint);text-decoration:none;margin-bottom:.9rem;transition:color .13s}
+.back:hover{color:var(--p)}
+h1{font-size:23px;font-weight:600;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:1.4rem;max-width:52ch;line-height:1.55}
+
+/* ── Layout ─────────────────────────────────────────────────────────── */
+.layout{display:grid;grid-template-columns:314px 1fr;gap:16px;align-items:start}
+.panel{position:sticky;top:196px;display:flex;flex-direction:column;gap:10px}
+.results{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:1.05rem 1.15rem}
+.lbl{font-size:10.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--hint)}
+
+/* ── Inputs ─────────────────────────────────────────────────────────── */
+.field{margin-bottom:.95rem}
+.field:last-child{margin-bottom:0}
+.field-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px}
+.field-top label{font-size:12.5px;color:var(--text);font-weight:500;line-height:1.3}
+.hintq{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--bg);border:1px solid var(--border);color:var(--hint);font-size:9px;font-weight:700;cursor:help;margin-left:4px;vertical-align:1px}
+.cur-pick{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:4px 10px;cursor:pointer;transition:all .13s;letter-spacing:.02em}
+.cur-pick:hover{border-color:#C4B5FD;color:var(--pt);background:var(--pl)}
+.inbox{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0 8px;transition:border-color .12s,box-shadow .12s,background .12s;flex:none;width:118px}
+.inbox:focus-within{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.1)}
+.inbox .pre,.inbox .post{font-size:12px;color:var(--hint);font-weight:500;flex:none}
+.inbox input{width:100%;min-width:0;padding:7px 0;border:none;background:transparent;outline:none;font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:var(--text);text-align:right}
+.inbox input::-webkit-outer-spin-button,.inbox input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.inbox input[type=number]{-moz-appearance:textfield}
+.inbox.solved{border-color:#A7F3D0;background:#F0FDF4}
+.inbox.solved input{color:var(--gt)}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;cursor:pointer;display:block}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:linear-gradient(90deg,var(--p) var(--pct,50%),#E5E7EB var(--pct,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--p);margin-top:-5px;box-shadow:0 1px 3px rgba(0,0,0,.18);transition:transform .1s}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.18)}
+input[type=range]::-moz-range-track{height:4px;border-radius:99px;background:#E5E7EB}
+input[type=range]::-moz-range-progress{height:4px;border-radius:99px;background:var(--p)}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--p);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+input[type=range]:disabled{opacity:.4;cursor:not-allowed}
+.scale{display:flex;justify-content:space-between;font-size:10px;color:var(--hint);margin-top:-2px}
+
+.divider{height:1px;background:var(--border);margin:.95rem -1.15rem}
+select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;cursor:pointer}
+select:focus{border-color:var(--p)}
+
+/* ── Segmented control ──────────────────────────────────────────────── */
+.seg{display:flex;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:3px}
+.seg button{flex:1;padding:6px 10px;border:none;border-radius:6px;background:transparent;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .13s;line-height:1.35}
+.seg button span{display:block;font-size:10px;font-weight:400;opacity:.7;margin-top:1px}
+.seg button.on{background:var(--card);color:var(--pt);box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.seg button:hover:not(.on){color:var(--text)}
+
+/* ── Headline — pinned above the sliders so it's always in view ───────── */
+.head-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:1.15rem 1.25rem;position:sticky;top:12px;z-index:30;margin-bottom:16px;box-shadow:0 10px 26px rgba(17,24,39,.09)}
+.head-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.hv{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:40px;font-weight:600;letter-spacing:-.02em;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;margin-top:2px}
+.hv-sub{font-size:12.5px;color:var(--muted);margin-top:5px}
+.hv-sub b{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text)}
+.toggle{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;user-select:none;background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:5px 11px 5px 8px;font-weight:500;transition:all .13s}
+.toggle:hover{border-color:#C4B5FD}
+.toggle.on{background:var(--pl);border-color:#C4B5FD;color:var(--pt)}
+.sw{width:26px;height:15px;border-radius:99px;background:#D1D5DB;position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle.on .sw{background:var(--p)}
+.toggle.on .sw::after{transform:translateX(11px)}
+
+.compbar{display:flex;height:9px;border-radius:99px;overflow:hidden;margin-top:1rem;background:var(--bg)}
+.compbar i{display:block;transition:width .25s ease}
+.complegend{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:9px}
+.complegend span{font-size:11.5px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.complegend b{color:var(--text);font-family:'JetBrains Mono',monospace;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+
+/* ── Truth layer ────────────────────────────────────────────────────── */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tile{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.85rem .95rem}
+.tile .tl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);display:block;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .tv{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.tile .tn{font-size:10.5px;color:var(--hint);margin-top:3px;line-height:1.35}
+.tile.neg .tv{color:var(--r)}
+.tile.pos .tv{color:var(--g)}
+
+/* ── Chart ──────────────────────────────────────────────────────────── */
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:1.05rem 1.15rem .8rem}
+.chart-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:.85rem;flex-wrap:wrap}
+.chart-hd .seg{flex:none;width:250px}
+.chart-box{position:relative}
+svg.chart{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y}
+.gridline{stroke:#F1F1F4;stroke-width:1}
+.axis-txt{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:#B0B4BB}
+.cross-line{stroke:var(--g);stroke-width:1.2;stroke-dasharray:3 3;opacity:.75}
+.cross-tag{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:var(--gt);font-weight:600}
+.hover-line{stroke:#9CA3AF;stroke-width:1;stroke-dasharray:2 3}
+.tip{position:absolute;pointer-events:none;background:#111827;color:#fff;border-radius:9px;padding:8px 11px;font-size:11.5px;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,.24);opacity:0;transition:opacity .12s;z-index:5;white-space:nowrap}
+.tip.on{opacity:1}
+.tip .ty{font-weight:600;font-size:11px;color:#C4B5FD;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px}
+.tip .tr{display:flex;justify-content:space-between;gap:14px}
+.tip .tr b{font-family:'JetBrains Mono',monospace;font-weight:600}
+.tip .tsep{height:1px;background:rgba(255,255,255,.16);margin:4px 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 15px;margin-top:.6rem;padding-top:.7rem;border-top:1px solid #F3F4F6}
+.legend span{font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.swatch{width:10px;height:10px;border-radius:3px;flex:none}
+
+/* ── Insight banner ─────────────────────────────────────────────────── */
+.insight{display:flex;align-items:flex-start;gap:11px;background:linear-gradient(135deg,#F0FDF4,#ECFDF5);border:1px solid #A7F3D0;border-radius:12px;padding:.85rem 1.05rem}
+.insight.muted{background:var(--bg);border-color:var(--border)}
+.insight-ic{width:26px;height:26px;border-radius:8px;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px;font-weight:700}
+.insight.muted .insight-ic{background:var(--hint)}
+.insight-tx{font-size:12.5px;line-height:1.55;color:var(--gt)}
+.insight.muted .insight-tx{color:var(--muted)}
+.insight-tx strong{font-weight:700}
+
+/* ── Compare ────────────────────────────────────────────────────────── */
+.cmp{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.75rem 1.05rem;flex-wrap:wrap}
+.cmp-l{font-size:12px;color:var(--muted);line-height:1.5}
+.cmp-l b{color:var(--text);font-family:'JetBrains Mono',monospace}
+.cmp-d{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px}
+.btn{padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .13s;white-space:nowrap}
+.btn:hover{border-color:var(--p);color:var(--pt);background:var(--pl)}
+.btn.ghost{border-style:dashed;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Table ──────────────────────────────────────────────────────────── */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.tbl-hd{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.15rem;cursor:pointer;user-select:none}
+.tbl-hd:hover{background:var(--bg)}
+.tbl-body{display:none;max-height:340px;overflow:auto;border-top:1px solid #F3F4F6}
+.tbl-body.on{display:block}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{position:sticky;top:0;padding:8px 1.15rem;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);background:var(--bg);border-bottom:1px solid var(--border)}
+thead th:first-child{text-align:left}
+tbody td{padding:7px 1.15rem;border-bottom:1px solid #F9FAFB;text-align:right;font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px}
+tbody td:first-child{text-align:left;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif}
+tbody tr.cross td{background:#F0FDF4}
+tbody tr:last-child td{border-bottom:none;font-weight:600;background:var(--bg)}
+.chev{color:var(--hint);font-size:16px;transition:transform .18s}
+.chev.on{transform:rotate(90deg)}
+
+.foot{font-size:11px;color:var(--hint);line-height:1.65;margin-top:.2rem}
+.foot a{color:var(--p);text-decoration:none}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .panel{position:static}
+  .tiles{grid-template-columns:1fr 1fr}
+  .hv{font-size:32px}
+  .chart-hd .seg{width:100%}
+}
+@media(max-width:480px){
+  body{padding:1.25rem .75rem 4rem}
+  .tiles{grid-template-columns:1fr 1fr;gap:8px}
+  .tile .tv{font-size:15px}
+  .hv{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/">‹ Project Jan</a>
+  <h1>Compound Interest Calculator</h1>
+  <p class="sub">Most calculators show you a big number and stop there. This one also shows what the fund manager takes and what inflation eats — so you see what you actually keep.</p>
+
+  <div class="head-card" id="head-card">
+    <div class="head-top">
+      <div>
+        <span class="lbl" id="head-label">Value after 30 years</span>
+        <div class="hv mn" id="head-value">—</div>
+        <div class="hv-sub" id="head-sub"></div>
+      </div>
+      <div class="toggle" id="t-real" role="switch" tabindex="0" aria-checked="false">
+        <span class="sw"></span><span>Today's money</span>
+      </div>
+    </div>
+    <div class="compbar" id="compbar"></div>
+    <div class="complegend" id="complegend"></div>
+  </div>
+
+  <div class="layout">
+
+    <!-- ══ INPUTS ══════════════════════════════════════════════════════ -->
+    <aside class="panel">
+      <div class="card">
+        <div class="field-top" style="margin-bottom:0">
+          <span class="lbl">Your plan</span>
+          <button class="cur-pick" id="b-currency" type="button" title="Switch currency — display only, no conversion">€ EUR</button>
+        </div>
+        <div style="height:.85rem"></div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="i-initial">Initial investment</label>
+            <div class="inbox" id="box-initial"><span class="pre cur-sym">€</span><input type="number" id="i-initial" step="100" min="0"></div>
+          </div>
+          <input type="range" id="s-initial" min="0" max="100000" step="500">
+          <div class="scale"><span><span class="cur-sym">€</span>0</span><span><span class="cur-sym">€</span>100k</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="i-monthly">Monthly contribution</label>
+            <div class="inbox" id="box-monthly"><span class="pre cur-sym">€</span><input type="number" id="i-monthly" step="25"></div>
+          </div>
+          <input type="range" id="s-monthly" min="0" max="3000" step="25">
+          <div class="scale"><span><span class="cur-sym">€</span>0</span><span><span class="cur-sym">€</span>3,000</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="i-incr">Raise contribution yearly by<span class="hintq" title="Most people's income grows. Raising your monthly amount each year has a surprisingly large effect.">?</span></label>
+            <div class="inbox" id="box-incr"><input type="number" id="i-incr" step="0.5" min="0"><span class="post">%</span></div>
+          </div>
+          <input type="range" id="s-incr" min="0" max="10" step="0.5">
+          <div class="scale"><span>0%</span><span>10%</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="i-years">Length of time</label>
+            <div class="inbox" id="box-years"><input type="number" id="i-years" step="1" min="1" max="60"><span class="post">yrs</span></div>
+          </div>
+          <input type="range" id="s-years" min="1" max="60" step="1">
+          <div class="scale"><span>1 yr</span><span>60 yrs</span></div>
+        </div>
+
+        <div class="divider"></div>
+        <span class="lbl">The market</span>
+        <div style="height:.85rem"></div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="i-ret">Expected annual return</label>
+            <div class="inbox" id="box-ret"><input type="number" id="i-ret" step="0.1"><span class="post">%</span></div>
+          </div>
+          <input type="range" id="s-ret" min="-2" max="15" step="0.1">
+          <div class="scale"><span>−2%</span><span>15%</span></div>
+        </div>
+
+        <div class="field" id="f-vol" hidden>
+          <div class="field-top">
+            <label for="i-vol">Volatility<span class="hintq" title="How much returns swing year to year. A global stock index sits around 15%; a mixed portfolio nearer 8–10%.">?</span></label>
+            <div class="inbox" id="box-vol"><input type="number" id="i-vol" step="0.5" min="0"><span class="post">%</span></div>
+          </div>
+          <input type="range" id="s-vol" min="0" max="35" step="0.5">
+          <div class="scale"><span>0%</span><span>35%</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="i-ter">Fund fee / TER<span class="hintq" title="The yearly fee your fund or platform charges on your whole balance. Index funds: 0.1–0.3%. Actively managed funds and unit-linked products: 1.5–2.5%.">?</span></label>
+            <div class="inbox" id="box-ter"><input type="number" id="i-ter" step="0.05" min="0"><span class="post">%</span></div>
+          </div>
+          <input type="range" id="s-ter" min="0" max="3" step="0.05">
+          <div class="scale"><span>0%</span><span>3%</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <label for="i-infl">Inflation<span class="hintq" title="Used to convert the result into today's purchasing power. The ECB targets 2%.">?</span></label>
+            <div class="inbox" id="box-infl"><input type="number" id="i-infl" step="0.1" min="0"><span class="post">%</span></div>
+          </div>
+          <input type="range" id="s-infl" min="0" max="10" step="0.1">
+          <div class="scale"><span>0%</span><span>10%</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field-top" style="margin-bottom:8px">
+          <span class="lbl" style="line-height:1.6">Work backwards</span>
+        </div>
+        <select id="i-solve">
+          <option value="none">Off — just show me the result</option>
+          <option value="monthly">Solve: monthly contribution</option>
+          <option value="years">Solve: how long it takes</option>
+          <option value="ret">Solve: return I'd need</option>
+        </select>
+        <div id="solve-target" hidden style="margin-top:9px">
+          <div class="field-top">
+            <label for="i-target">Target amount</label>
+            <div class="inbox"><span class="pre cur-sym">€</span><input type="number" id="i-target" step="10000" min="0"></div>
+          </div>
+          <div class="foot" id="solve-note"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="b-share">Copy link</button>
+        <button class="btn ghost" id="b-reset">Reset</button>
+      </div>
+    </aside>
+
+    <!-- ══ RESULTS ═════════════════════════════════════════════════════ -->
+    <main class="results">
+
+      <div class="tiles" id="tiles"></div>
+
+      <div class="chart-card">
+        <div class="chart-hd">
+          <span class="lbl">How it builds up</span>
+          <div class="seg" id="seg-mode">
+            <button data-m="simple" class="on">Simple<span>one smooth line</span></button>
+            <button data-m="mc">Realistic<span>range of outcomes</span></button>
+          </div>
+        </div>
+        <div class="chart-box" id="chart-box">
+          <svg class="chart" id="chart" viewBox="0 0 760 330" aria-label="Growth over time"></svg>
+          <div class="tip" id="tip"></div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="insight" id="insight">
+        <div class="insight-ic">↑</div>
+        <div class="insight-tx" id="insight-tx"></div>
+      </div>
+
+      <div class="cmp" id="cmp">
+        <div class="cmp-l" id="cmp-l">Pin the current scenario, then change something — you'll see the difference as a number and a ghost line on the chart.</div>
+        <div class="actions">
+          <button class="btn" id="b-pin">Pin this scenario</button>
+          <button class="btn ghost" id="b-unpin" hidden>Clear</button>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <div class="tbl-hd" id="tbl-hd">
+          <span class="lbl">Year-by-year breakdown</span>
+          <span class="chev" id="tbl-chev">›</span>
+        </div>
+        <div class="tbl-body" id="tbl-body">
+          <table>
+            <thead><tr><th>Year</th><th>Paid in</th><th>Interest</th><th>Fees</th><th>Balance</th></tr></thead>
+            <tbody id="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="foot">Fees are charged monthly on the whole balance, the way a TER works. “Cost of fees” is the full gap between your end balance and a fee-free one — it includes the growth those fees never got to make. Realistic mode draws 600 log-normal return paths centred on the rate you typed, from a fixed seed, so a shared link always reproduces the same picture. This is a calculator, not financial advice.</p>
+    </main>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══ State ═════════════════════════════════════════════════════════════ */
+var DEF = {initial:10000, monthly:300, incr:0, years:30, ret:7, ter:0.2, infl:2, vol:15, target:500000};
+var st = Object.assign({}, DEF);
+var view = {real:false, mode:'simple', solve:'none'};
+var pinned = null;          // snapshot for A/B compare
+var hoverYear = null;       // chart hover position
+
+var FIELDS = ['initial','monthly','incr','years','ret','ter','infl','vol'];
+
+/* ══ Formatting ════════════════════════════════════════════════════════
+   Currency picker is display-only: it swaps the symbol, not the numbers.
+   €300 becomes $300 becomes £300 — no exchange rate is applied. */
+var CURRENCIES = ['EUR','USD','GBP','CZK'];
+var curCode = 'EUR', curSym = '€', nf0;
+function buildFormatters(){
+  nf0 = new Intl.NumberFormat('en-IE',{style:'currency',currency:curCode,maximumFractionDigits:0,currencyDisplay:'narrowSymbol'});
+  curSym = nf0.formatToParts(0).filter(function(p){ return p.type === 'currency'; }).map(function(p){ return p.symbol||p.value; })[0] || curCode;
+}
+buildFormatters();
+function eur(v){ return nf0.format(Math.round(v || 0)); }
+function eurSigned(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + nf0.format(Math.abs(Math.round(v||0))); }
+function compact(v){
+  var a = Math.abs(v);
+  if(a >= 1e6) return curSym + (v/1e6).toFixed(a >= 1e7 ? 0 : 1) + 'M';
+  if(a >= 1e3) return curSym + Math.round(v/1e3) + 'k';
+  return curSym + Math.round(v);
+}
+function updateCurrencyUI(){
+  document.getElementById('b-currency').textContent = curSym + ' ' + curCode;
+  Array.prototype.forEach.call(document.querySelectorAll('.cur-sym'), function(el){ el.textContent = curSym; });
+}
+function yearsMonths(m){
+  var y = Math.floor(m/12), mm = m % 12;
+  return y + (y === 1 ? ' year' : ' years') + (mm ? ' ' + mm + (mm === 1 ? ' month' : ' months') : '');
+}
+
+/* ══ Core simulation ═══════════════════════════════════════════════════
+   Monthly steps. Each month: grow the balance, take the fee off the whole
+   balance (that's how a TER works), then add the contribution.
+   A parallel fee-free balance runs alongside so we can price the fees. */
+function simulate(p, months){
+  var n = months == null ? Math.round(p.years * 12) : months;
+  var rm = Math.pow(1 + p.ret/100, 1/12) - 1;
+  var fm = p.ter/100/12;
+  var bal = p.initial, balNF = p.initial;
+  var paid = 0, fees = 0, contrib = p.monthly;
+  var s = new Array(n + 1);
+  s[0] = {m:0, bal:bal, paid:0, balNF:balNF, fees:0};
+  for(var m = 1; m <= n; m++){
+    bal *= (1 + rm);
+    var fee = bal * fm;
+    bal -= fee; fees += fee;
+    balNF *= (1 + rm);
+    bal += contrib; balNF += contrib; paid += contrib;
+    if(m % 12 === 0) contrib *= (1 + p.incr/100);
+    s[m] = {m:m, bal:bal, paid:paid, balNF:balNF, fees:fees};
+  }
+  return {
+    s: s, n: n,
+    final: bal, finalNF: balNF,
+    paid: paid, initial: p.initial,
+    growth: bal - p.initial - paid,
+    feeCost: balNF - bal,
+    feesCharged: fees
+  };
+}
+
+/* First year where the interest earned beats the money paid in that year. */
+function crossover(r, p){
+  for(var y = 1; y * 12 <= r.n; y++){
+    var a = r.s[(y-1)*12], b = r.s[y*12];
+    var paidY = b.paid - a.paid;
+    var growthY = (b.bal - a.bal) - paidY;
+    if(growthY > paidY && paidY >= 0) return {year:y, growth:growthY, paid:paidY};
+  }
+  return null;
+}
+
+/* ══ Monte Carlo ═══════════════════════════════════════════════════════
+   Seeded so the same inputs always give the same picture — a shared link
+   reproduces exactly what you saw. */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gaussFactory(rng){
+  var spare = null;
+  return function(){
+    if(spare !== null){ var s = spare; spare = null; return s; }
+    var u, v, q;
+    do { u = rng()*2 - 1; v = rng()*2 - 1; q = u*u + v*v; } while(q === 0 || q >= 1);
+    var f = Math.sqrt(-2 * Math.log(q) / q);
+    spare = v * f;
+    return u * f;
+  };
+}
+var PATHS = 600;
+function montecarlo(p){
+  var years = Math.round(p.years), n = years * 12;
+  var rm = Math.pow(1 + p.ret/100, 1/12) - 1;
+  /* Log-normal monthly returns centred so the median path matches the rate
+     you typed — "7% a year" stays 7% a year, the volatility just fans the
+     outcomes around it instead of quietly moving the middle. */
+  var mu = Math.log(1 + rm);
+  var sd = (p.vol/100) / Math.sqrt(12);
+  var fm = p.ter/100/12;
+  var seed = Math.round(p.years*7 + p.ret*131 + p.vol*17 + p.ter*997 + p.monthly + p.initial/10 + p.incr*53) || 1;
+  var rng = mulberry32(seed), gauss = gaussFactory(rng);
+
+  var buckets = [];
+  for(var y = 0; y <= years; y++) buckets.push(new Float64Array(PATHS));
+  var finals = new Float64Array(PATHS);
+
+  for(var i = 0; i < PATHS; i++){
+    var bal = p.initial, contrib = p.monthly;
+    buckets[0][i] = bal;
+    for(var m = 1; m <= n; m++){
+      bal *= Math.exp(mu + sd * gauss());
+      bal -= bal * fm;
+      bal += contrib;
+      if(bal < 0) bal = 0;
+      if(m % 12 === 0){ contrib *= (1 + p.incr/100); buckets[m/12][i] = bal; }
+    }
+    finals[i] = bal;
+  }
+
+  var qs = [0.10, 0.25, 0.50, 0.75, 0.90];
+  var bands = qs.map(function(){ return []; });
+  for(var y2 = 0; y2 <= years; y2++){
+    var arr = buckets[y2]; arr.sort();
+    qs.forEach(function(q, qi){
+      bands[qi].push({t:y2, v:arr[Math.min(PATHS - 1, Math.round(q * (PATHS - 1)))]});
+    });
+  }
+  var det = simulate(p);
+  var sortedF = Float64Array.from(finals); sortedF.sort();
+  var below = 0;
+  for(var k = 0; k < PATHS; k++) if(finals[k] < det.paid + p.initial) below++;
+
+  return {
+    p10:bands[0], p25:bands[1], p50:bands[2], p75:bands[3], p90:bands[4],
+    finalP10:sortedF[Math.round(0.10*(PATHS-1))],
+    finalP50:sortedF[Math.round(0.50*(PATHS-1))],
+    finalP90:sortedF[Math.round(0.90*(PATHS-1))],
+    lossOdds: below / PATHS,
+    det: det
+  };
+}
+
+/* ══ Solver ════════════════════════════════════════════════════════════
+   Everything is monotonic in the thing we're solving for, so bisection is
+   both simple and reliable. Targets are compared in whatever units the
+   "Today's money" toggle is showing. */
+function displayFinal(p){
+  var f = simulate(p).final;
+  return view.real ? f / Math.pow(1 + p.infl/100, p.years) : f;
+}
+function bisect(key, lo, hi){
+  var p = Object.assign({}, st);
+  for(var i = 0; i < 60; i++){
+    var mid = (lo + hi) / 2;
+    p[key] = mid;
+    if(displayFinal(p) < st.target) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+function solveYears(){
+  var p = Object.assign({}, st, {years:60});
+  var r = simulate(p);
+  for(var m = 1; m <= r.n; m++){
+    var v = view.real ? r.s[m].bal / Math.pow(1 + st.infl/100, m/12) : r.s[m].bal;
+    if(v >= st.target) return m;
+  }
+  return null;
+}
+function applySolve(){
+  var note = document.getElementById('solve-note');
+  ['monthly','years','ret'].forEach(function(k){
+    document.getElementById('box-' + k).classList.remove('solved');
+  });
+  if(view.solve === 'none'){ note.textContent = ''; return; }
+
+  if(view.solve === 'monthly'){
+    var lo = -5000, hi = 100000;
+    var pLo = Object.assign({}, st, {monthly:hi});
+    if(displayFinal(pLo) < st.target){ note.textContent = 'Even €100,000 a month falls short — stretch the timeline or the return.'; return; }
+    st.monthly = Math.ceil(bisect('monthly', lo, hi));
+    document.getElementById('box-monthly').classList.add('solved');
+    note.innerHTML = st.monthly <= 0
+      ? 'You already get there from the initial investment alone.'
+      : 'Put in <b>' + eur(st.monthly) + '</b> a month and you land on ' + eur(st.target) + ' after ' + st.years + (st.years === 1 ? ' year.' : ' years.');
+  }
+  else if(view.solve === 'years'){
+    var m = solveYears();
+    if(m === null){ note.textContent = 'Not reachable within 60 years at these settings.'; return; }
+    st.years = Math.max(1, Math.ceil(m / 12));
+    document.getElementById('box-years').classList.add('solved');
+    note.innerHTML = 'You cross ' + eur(st.target) + ' after <b>' + yearsMonths(m) + '</b>.';
+  }
+  else if(view.solve === 'ret'){
+    var pHi = Object.assign({}, st, {ret:40});
+    if(displayFinal(pHi) < st.target){ note.textContent = 'Not reachable even at 40% a year — the plan needs more money or more time.'; return; }
+    st.ret = Math.round(bisect('ret', -20, 40) * 10) / 10;
+    document.getElementById('box-ret').classList.add('solved');
+    note.innerHTML = 'You would need <b>' + st.ret.toFixed(1) + '%</b> a year' +
+      (st.ret > 12 ? ' — well above what a broad stock index has historically delivered.' : '.');
+  }
+}
+
+/* ══ Chart ═════════════════════════════════════════════════════════════ */
+var W = 760, H = 330, PAD = {t:14, r:14, b:26, l:58};
+var PW = W - PAD.l - PAD.r, PH = H - PAD.t - PAD.b;
+
+function niceMax(v){
+  if(v <= 0) return 1;
+  var exp = Math.pow(10, Math.floor(Math.log10(v)));
+  var f = v / exp;
+  var step = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  return step * exp;
+}
+function sample(series, max){
+  var stride = Math.max(1, Math.ceil(series.length / max));
+  var out = [];
+  for(var i = 0; i < series.length; i += stride) out.push(series[i]);
+  if(out[out.length-1] !== series[series.length-1]) out.push(series[series.length-1]);
+  return out;
+}
+function lineP(pts, x, y){
+  var d = '';
+  for(var i = 0; i < pts.length; i++) d += (i ? 'L' : 'M') + x(pts[i].t).toFixed(1) + ' ' + y(pts[i].v).toFixed(1);
+  return d;
+}
+function bandP(top, bot, x, y){
+  var d = lineP(top, x, y);
+  for(var i = bot.length - 1; i >= 0; i--) d += 'L' + x(bot[i].t).toFixed(1) + ' ' + y(bot[i].v).toFixed(1);
+  return d + 'Z';
+}
+function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+
+function drawChart(r, mc){
+  var svg = document.getElementById('chart');
+  var deflate = function(t){ return view.real ? Math.pow(1 + st.infl/100, t) : 1; };
+  var years = st.years;
+
+  var top = 0;
+  if(view.mode === 'mc' && mc){
+    top = Math.max.apply(null, mc.p90.map(function(p){ return p.v / deflate(p.t); }));
+  } else {
+    top = Math.max.apply(null, sample(r.s, 200).map(function(p){ return p.balNF / deflate(p.m/12); }));
+  }
+  if(pinned) top = Math.max(top, pinned.top);
+  var ymax = niceMax(top * 1.06) || 1;
+
+  var x = function(t){ return PAD.l + (years ? t / years : 0) * PW; };
+  var y = function(v){ return PAD.t + PH - Math.max(0, Math.min(1, v / ymax)) * PH; };
+
+  var g = [];
+
+  /* gridlines + y labels */
+  var TICKS = 5;
+  for(var i = 0; i <= TICKS; i++){
+    var v = ymax * i / TICKS, py = y(v);
+    g.push('<line class="gridline" x1="' + PAD.l + '" y1="' + py.toFixed(1) + '" x2="' + (W - PAD.r) + '" y2="' + py.toFixed(1) + '"/>');
+    g.push('<text class="axis-txt" x="' + (PAD.l - 8) + '" y="' + (py + 3.2).toFixed(1) + '" text-anchor="end">' + esc(compact(v)) + '</text>');
+  }
+
+  /* x labels */
+  var xstep = years <= 12 ? 2 : years <= 30 ? 5 : 10;
+  for(var t = 0; t <= years; t += xstep){
+    g.push('<text class="axis-txt" x="' + x(t).toFixed(1) + '" y="' + (H - PAD.b + 15) + '" text-anchor="middle">' + t + '</text>');
+  }
+  if(years % xstep !== 0)
+    g.push('<text class="axis-txt" x="' + x(years).toFixed(1) + '" y="' + (H - PAD.b + 15) + '" text-anchor="middle">' + years + '</text>');
+
+  if(view.mode === 'mc' && mc){
+    /* ── fan chart ── */
+    var toPt = function(arr){ return arr.map(function(p){ return {t:p.t, v:p.v / deflate(p.t)}; }); };
+    var p10 = toPt(mc.p10), p25 = toPt(mc.p25), p50 = toPt(mc.p50), p75 = toPt(mc.p75), p90 = toPt(mc.p90);
+    g.push('<path d="' + bandP(p90, p10, x, y) + '" fill="#7C3AED" opacity=".12"/>');
+    g.push('<path d="' + bandP(p75, p25, x, y) + '" fill="#7C3AED" opacity=".2"/>');
+    g.push('<path d="' + lineP(p50, x, y) + '" fill="none" stroke="#6D28D9" stroke-width="2.2" stroke-linejoin="round"/>');
+    var paidPts = [];
+    for(var yy = 0; yy <= years; yy++){
+      var mo = yy * 12;
+      paidPts.push({t:yy, v:(r.s[mo].paid + st.initial) / deflate(yy)});
+    }
+    g.push('<path d="' + lineP(paidPts, x, y) + '" fill="none" stroke="#94A3B8" stroke-width="1.4" stroke-dasharray="4 3"/>');
+  } else {
+    /* ── stacked composition ── */
+    var pts = sample(r.s, 200);
+    var b0 = pts.map(function(p){ return {t:p.m/12, v:0}; });
+    var b1 = pts.map(function(p){ return {t:p.m/12, v:st.initial / deflate(p.m/12)}; });
+    var b2 = pts.map(function(p){ return {t:p.m/12, v:(st.initial + p.paid) / deflate(p.m/12)}; });
+    var b3 = pts.map(function(p){ return {t:p.m/12, v:p.bal / deflate(p.m/12)}; });
+    var b4 = pts.map(function(p){ return {t:p.m/12, v:p.balNF / deflate(p.m/12)}; });
+
+    /* fee gap: what you'd have had with no fees, sitting on top */
+    if(r.feeCost > 0.5)
+      g.push('<path d="' + bandP(b4, b3, x, y) + '" fill="var(--c-fee)" opacity=".22"/>');
+    g.push('<path d="' + bandP(b3, b2, x, y) + '" fill="var(--c-growth)" opacity="' + (r.growth < 0 ? '.0' : '.85') + '" fill-rule="evenodd"/>');
+    if(r.growth < 0) g.push('<path d="' + bandP(b3, b2, x, y) + '" fill="var(--c-fee)" opacity=".55" fill-rule="evenodd"/>');
+    g.push('<path d="' + bandP(b2, b1, x, y) + '" fill="var(--c-contrib)" opacity=".85"/>');
+    g.push('<path d="' + bandP(b1, b0, x, y) + '" fill="var(--c-init)" opacity=".85"/>');
+    if(r.feeCost > 0.5)
+      g.push('<path d="' + lineP(b4, x, y) + '" fill="none" stroke="var(--c-fee)" stroke-width="1.4" stroke-dasharray="4 3"/>');
+
+    /* the moment your money out-earns you */
+    var c = crossover(r, st);
+    if(c && c.year < years){
+      var cx = x(c.year);
+      g.push('<line class="cross-line" x1="' + cx.toFixed(1) + '" y1="' + PAD.t + '" x2="' + cx.toFixed(1) + '" y2="' + (PAD.t + PH) + '"/>');
+      var anchor = c.year > years * 0.72 ? 'end' : 'start';
+      var dx = anchor === 'end' ? -6 : 6;
+      g.push('<text class="cross-tag" x="' + (cx + dx).toFixed(1) + '" y="' + (PAD.t + 11) + '" text-anchor="' + anchor + '">▸ year ' + c.year + '</text>');
+    }
+  }
+
+  /* pinned scenario ghost */
+  if(pinned){
+    var gp = pinned.pts.map(function(p){ return {t:p.t, v:p.v / (view.real ? Math.pow(1 + pinned.st.infl/100, p.t) : 1)}; });
+    g.push('<path d="' + lineP(gp, x, y) + '" fill="none" stroke="#111827" stroke-width="1.6" stroke-dasharray="5 4" opacity=".45"/>');
+  }
+
+  /* hover crosshair */
+  if(hoverYear !== null){
+    var hx = x(hoverYear);
+    g.push('<line class="hover-line" x1="' + hx.toFixed(1) + '" y1="' + PAD.t + '" x2="' + hx.toFixed(1) + '" y2="' + (PAD.t + PH) + '"/>');
+    var hv = view.mode === 'mc' && mc
+      ? mc.p50[Math.round(hoverYear)].v / deflate(hoverYear)
+      : r.s[Math.round(hoverYear * 12)].bal / deflate(hoverYear);
+    g.push('<circle cx="' + hx.toFixed(1) + '" cy="' + y(hv).toFixed(1) + '" r="4" fill="#fff" stroke="#6D28D9" stroke-width="2"/>');
+  }
+
+  svg.innerHTML = g.join('');
+  drawLegend(r);
+}
+
+function drawLegend(r){
+  var L = document.getElementById('legend');
+  function item(color, text, dash){
+    return '<span>' + (dash
+      ? '<svg width="14" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="' + color + '" stroke-width="2" stroke-dasharray="4 3"/></svg>'
+      : '<i class="swatch" style="background:' + color + '"></i>') + text + '</span>';
+  }
+  if(view.mode === 'mc'){
+    L.innerHTML =
+      item('#6D28D9', 'Median outcome') +
+      item('rgba(124,58,237,.28)', 'Middle 50% of outcomes') +
+      item('rgba(124,58,237,.14)', '10th–90th percentile') +
+      item('#94A3B8', 'Total paid in', true);
+  } else {
+    L.innerHTML =
+      item('var(--c-init)', 'Initial investment') +
+      item('var(--c-contrib)', 'Your contributions') +
+      item('var(--c-growth)', 'Growth') +
+      (r.feeCost > 0.5 ? item('var(--c-fee)', 'Taken by fees', true) : '') +
+      (pinned ? item('#111827', 'Pinned scenario', true) : '');
+  }
+}
+
+/* ══ Hover tooltip ═════════════════════════════════════════════════════ */
+function bindHover(){
+  var box = document.getElementById('chart-box');
+  var svg = document.getElementById('chart');
+  var tip = document.getElementById('tip');
+
+  function move(ev){
+    var rect = svg.getBoundingClientRect();
+    var cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
+    var vx = cx / rect.width * W;
+    var frac = (vx - PAD.l) / PW;
+    if(frac < 0 || frac > 1){ leave(); return; }
+    var yr = Math.round(frac * st.years);
+    if(yr === hoverYear){ place(ev, rect, yr); return; }
+    hoverYear = yr;
+    render(true);
+    place(ev, rect, yr);
+  }
+  function place(ev, rect, yr){
+    var r = last.r, mc = last.mc;
+    var defl = view.real ? Math.pow(1 + st.infl/100, yr) : 1;
+    var html;
+    if(view.mode === 'mc' && mc){
+      html = '<div class="ty">Year ' + yr + '</div>' +
+        '<div class="tr"><span>Median</span><b>' + eur(mc.p50[yr].v / defl) + '</b></div>' +
+        '<div class="tr"><span>Bad case (p10)</span><b>' + eur(mc.p10[yr].v / defl) + '</b></div>' +
+        '<div class="tr"><span>Good case (p90)</span><b>' + eur(mc.p90[yr].v / defl) + '</b></div>' +
+        '<div class="tsep"></div>' +
+        '<div class="tr"><span>Paid in</span><b>' + eur((r.s[yr*12].paid + st.initial) / defl) + '</b></div>';
+    } else {
+      var p = r.s[yr*12];
+      html = '<div class="ty">Year ' + yr + '</div>' +
+        '<div class="tr"><span>Balance</span><b>' + eur(p.bal / defl) + '</b></div>' +
+        '<div class="tr"><span>Paid in</span><b>' + eur((p.paid + st.initial) / defl) + '</b></div>' +
+        '<div class="tr"><span>Growth</span><b>' + eur((p.bal - p.paid - st.initial) / defl) + '</b></div>';
+      if(r.feeCost > 0.5)
+        html += '<div class="tsep"></div><div class="tr"><span>Lost to fees</span><b>' + eur((p.balNF - p.bal) / defl) + '</b></div>';
+      if(pinned && yr < pinned.pts.length){
+        var pv = pinned.pts[yr].v / (view.real ? Math.pow(1 + pinned.st.infl/100, yr) : 1);
+        html += '<div class="tsep"></div><div class="tr"><span>vs pinned</span><b>' + eurSigned(p.bal/defl - pv) + '</b></div>';
+      }
+    }
+    tip.innerHTML = html;
+    tip.classList.add('on');
+    var px = (PAD.l + (st.years ? yr/st.years : 0) * PW) / W * rect.width;
+    var tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(rect.width - tw, px - tw/2)) + 'px';
+    tip.style.top = '4px';
+  }
+  function leave(){
+    if(hoverYear === null) return;
+    hoverYear = null;
+    tip.classList.remove('on');
+    render(true);
+  }
+  box.addEventListener('mousemove', move);
+  box.addEventListener('mouseleave', leave);
+  box.addEventListener('touchstart', move, {passive:true});
+  box.addEventListener('touchmove', move, {passive:true});
+  box.addEventListener('touchend', leave);
+}
+
+/* ══ Render ════════════════════════════════════════════════════════════ */
+var last = {r:null, mc:null};
+
+function render(chartOnly){
+  if(!chartOnly) applySolve();
+
+  var r = simulate(st);
+  var mc = view.mode === 'mc' ? montecarlo(st) : null;
+  last = {r:r, mc:mc};
+
+  if(!chartOnly){
+    syncInputs();
+    updateCurrencyUI();
+    var inflF = Math.pow(1 + st.infl/100, st.years);
+    var show = function(v){ return view.real ? v / inflF : v; };
+
+    /* headline */
+    document.getElementById('t-real').classList.toggle('on', view.real);
+    document.getElementById('t-real').setAttribute('aria-checked', String(view.real));
+
+    var HL = document.getElementById('head-label');
+    var HV = document.getElementById('head-value');
+    var HS = document.getElementById('head-sub');
+
+    if(view.mode === 'mc'){
+      HL.textContent = 'Median outcome after ' + st.years + (st.years === 1 ? ' year' : ' years');
+      HV.textContent = eur(show(mc.finalP50));
+      HS.innerHTML = '8 out of 10 runs land between <b>' + eur(show(mc.finalP10)) + '</b> and <b>' + eur(show(mc.finalP90)) + '</b>' +
+                     (view.real ? ' in today\'s money.' : '.');
+    } else {
+      HL.textContent = 'Value after ' + st.years + (st.years === 1 ? ' year' : ' years');
+      HV.textContent = eur(show(r.final));
+      HS.innerHTML = view.real
+        ? 'Nominally that is <b>' + eur(r.final) + '</b> — but this is what it buys in today\'s money.'
+        : 'That is <b>' + eur(r.final / inflF) + '</b> in today\'s money after ' + st.infl + '% inflation.';
+    }
+
+    /* composition bar — in Realistic mode it splits the median outcome */
+    var endBal = view.mode === 'mc' ? mc.finalP50 : r.final;
+    var grw = endBal - st.initial - r.paid;
+    var pos = Math.max(1, st.initial) + Math.max(0, r.paid) + Math.max(0, grw);
+    var segs = [
+      {c:'var(--c-init)', v:Math.max(0, st.initial), l:'Initial'},
+      {c:'var(--c-contrib)', v:Math.max(0, r.paid), l:'You paid in'},
+      {c:'var(--c-growth)', v:Math.max(0, grw), l:view.mode === 'mc' ? 'Median growth' : 'Growth'}
+    ];
+    document.getElementById('compbar').innerHTML = segs.map(function(s){
+      return '<i style="width:' + (s.v/pos*100).toFixed(2) + '%;background:' + s.c + '"></i>';
+    }).join('');
+    document.getElementById('complegend').innerHTML = segs.map(function(s){
+      return '<span><i class="dot" style="background:' + s.c + '"></i>' + s.l + ' <b>' + eur(show(s.v)) + '</b></span>';
+    }).join('');
+
+    /* tiles — the truth layer */
+    var T = document.getElementById('tiles');
+    if(view.mode === 'mc'){
+      T.innerHTML =
+        tile('Bad case · p10', eur(show(mc.finalP10)), '1 in 10 runs ended below this', '') +
+        tile('Median · p50', eur(show(mc.finalP50)), 'The middle outcome', '') +
+        tile('Good case · p90', eur(show(mc.finalP90)), '1 in 10 runs beat this', '') +
+        tile('Chance of losing money', (mc.lossOdds*100).toFixed(0) + '%', 'Runs that ended below what you paid in', mc.lossOdds > 0.15 ? 'neg' : '');
+    } else {
+      var infLoss = r.final - r.final/inflF;
+      var growthShare = r.final > 0 ? Math.max(0, r.growth) / r.final * 100 : 0;
+      T.innerHTML =
+        tile('You paid in', eur(show(st.initial + r.paid)), 'Initial + ' + st.years * 12 + ' monthly payments', '') +
+        tile(r.growth >= 0 ? 'The market added' : 'The market took',
+             (r.growth < 0 ? '−' : '') + eur(Math.abs(show(r.growth))),
+             r.growth >= 0 ? growthShare.toFixed(0) + '% of your end balance' : 'Returns did not cover fees and time',
+             r.growth >= 0 ? 'pos' : 'neg') +
+        tile('Cost of fees', '−' + eur(show(r.feeCost)), st.ter + '% a year, including lost growth', r.feeCost > 1 ? 'neg' : '') +
+        tile('Lost to inflation', '−' + eur(infLoss), st.infl + '% a year eats this much value', infLoss > 1 ? 'neg' : '');
+    }
+
+    /* insight banner */
+    renderInsight(r, mc, inflF);
+
+    /* compare row */
+    renderCompare(r, show);
+
+    /* table */
+    renderTable(r, show, inflF);
+
+    encodeURL();
+  }
+
+  drawChart(r, mc);
+}
+
+function tile(label, value, note, cls){
+  return '<div class="tile ' + cls + '"><span class="tl">' + esc(label) + '</span>' +
+         '<div class="tv">' + esc(value) + '</div><div class="tn">' + esc(note) + '</div></div>';
+}
+
+function renderInsight(r, mc, inflF){
+  var box = document.getElementById('insight');
+  var tx = document.getElementById('insight-tx');
+  var ic = box.querySelector('.insight-ic');
+
+  if(view.mode === 'mc'){
+    var spread = mc.finalP90 - mc.finalP10;
+    box.className = 'insight muted';
+    ic.textContent = '~';
+    tx.innerHTML = 'At ' + st.vol + '% volatility the same plan can end anywhere across a <strong>' + eur(spread) + '</strong> spread. ' +
+      'The single smooth number in Simple mode is the average of a very bumpy ride — treat it as the middle of a range, not a promise.';
+    return;
+  }
+
+  var c = crossover(r, st);
+  if(c && c.year <= st.years){
+    box.className = 'insight';
+    ic.textContent = '↑';
+    tx.innerHTML = '<strong>Year ' + c.year + ' is the turning point.</strong> From there your balance earns more each year (' +
+      eur(c.growth) + ') than you pay into it (' + eur(c.paid) + '). That is the whole point of compounding — everything before it is you doing the work, everything after it is your money doing the work.';
+  } else if(r.paid <= 0 && st.initial > 0){
+    box.className = 'insight';
+    ic.textContent = '↑';
+    tx.innerHTML = 'With no monthly contributions, every euro of the <strong>' + eur(r.growth) + '</strong> growth comes from compounding alone.';
+  } else {
+    box.className = 'insight muted';
+    ic.textContent = '·';
+    tx.innerHTML = 'Over ' + st.years + (st.years === 1 ? ' year' : ' years') + ' your money never quite out-earns what you pay in — the crossover point sits beyond this timeline. ' +
+      'Stretch the years or raise the return and watch it appear.';
+  }
+}
+
+function renderCompare(r, show){
+  var l = document.getElementById('cmp-l');
+  var unpin = document.getElementById('b-unpin');
+  var pin = document.getElementById('b-pin');
+  if(!pinned){
+    l.textContent = 'Pin the current scenario, then change something — you\'ll see the difference as a number and a ghost line on the chart.';
+    unpin.hidden = true; pin.textContent = 'Pin this scenario';
+    return;
+  }
+  unpin.hidden = false; pin.textContent = 'Re-pin current';
+  var pf = view.real ? pinned.final / Math.pow(1 + pinned.st.infl/100, pinned.st.years) : pinned.final;
+  var d = show(r.final) - pf;
+  var pct = pf !== 0 ? (d / Math.abs(pf) * 100) : 0;
+  l.innerHTML = 'Pinned: <b>' + esc(pinned.desc) + '</b> → ' + eur(pf) +
+    '<br><span style="color:' + (d >= 0 ? 'var(--g)' : 'var(--r)') + '">Current scenario is <span class="cmp-d">' +
+    eurSigned(d) + '</span> (' + (d >= 0 ? '+' : '−') + Math.abs(pct).toFixed(0) + '%)</span>';
+}
+
+function renderTable(r, show, inflF){
+  var rows = '', prev = r.s[0], cross = crossover(r, st);
+  for(var y = 1; y <= st.years; y++){
+    var cur = r.s[y*12];
+    var paidY = cur.paid - prev.paid;
+    var feeY = cur.fees - prev.fees;
+    var intY = (cur.bal - prev.bal) - paidY + feeY;
+    var d = view.real ? Math.pow(1 + st.infl/100, y) : 1;
+    rows += '<tr' + (cross && cross.year === y ? ' class="cross"' : '') + '><td>' + y + '</td>' +
+      '<td>' + eur(paidY/d) + '</td>' +
+      '<td>' + eur(intY/d) + '</td>' +
+      '<td>' + (feeY > 0.5 ? '−' + eur(feeY/d) : '—') + '</td>' +
+      '<td>' + eur(cur.bal/d) + '</td></tr>';
+    prev = cur;
+  }
+  document.getElementById('tbl').innerHTML = rows;
+}
+
+/* ══ Inputs ════════════════════════════════════════════════════════════ */
+function syncInputs(){
+  FIELDS.forEach(function(k){
+    var i = document.getElementById('i-' + k), s = document.getElementById('s-' + k);
+    if(document.activeElement !== i) i.value = st[k];
+    s.value = st[k];
+    var pct = (s.value - s.min) / (s.max - s.min) * 100;
+    s.style.setProperty('--pct', pct + '%');
+  });
+  var ti = document.getElementById('i-target');
+  if(document.activeElement !== ti) ti.value = st.target;
+  document.getElementById('f-vol').hidden = view.mode !== 'mc';
+  document.getElementById('solve-target').hidden = view.solve === 'none';
+  document.getElementById('i-solve').value = view.solve;
+  Array.prototype.forEach.call(document.querySelectorAll('#seg-mode button'), function(b){
+    b.classList.toggle('on', b.dataset.m === view.mode);
+  });
+}
+
+function clampField(k, v){
+  var s = document.getElementById('s-' + k);
+  if(isNaN(v)) v = DEF[k];
+  var min = parseFloat(s.min), max = parseFloat(s.max);
+  if(k === 'monthly') min = -1e6;             /* withdrawals are allowed */
+  if(k === 'initial' || k === 'years') v = Math.max(min, v);
+  else v = Math.max(min, Math.min(max * 4, v));
+  if(k === 'years') v = Math.max(1, Math.min(60, Math.round(v)));
+  return v;
+}
+
+function bindInputs(){
+  FIELDS.forEach(function(k){
+    var i = document.getElementById('i-' + k), s = document.getElementById('s-' + k);
+    i.addEventListener('input', function(){
+      st[k] = clampField(k, parseFloat(i.value));
+      render();
+    });
+    i.addEventListener('blur', function(){ i.value = st[k]; });
+    s.addEventListener('input', function(){ st[k] = parseFloat(s.value); render(); });
+  });
+
+  document.getElementById('i-target').addEventListener('input', function(){
+    st.target = Math.max(0, parseFloat(this.value) || 0);
+    render();
+  });
+  document.getElementById('i-solve').addEventListener('change', function(){
+    view.solve = this.value;
+    render();
+  });
+
+  document.getElementById('b-currency').addEventListener('click', function(){
+    curCode = CURRENCIES[(CURRENCIES.indexOf(curCode) + 1) % CURRENCIES.length];
+    buildFormatters();
+    render();
+  });
+
+  document.getElementById('t-real').addEventListener('click', function(){ view.real = !view.real; render(); });
+  document.getElementById('t-real').addEventListener('keydown', function(e){
+    if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); view.real = !view.real; render(); }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('#seg-mode button'), function(b){
+    b.addEventListener('click', function(){ view.mode = b.dataset.m; render(); });
+  });
+
+  document.getElementById('b-pin').addEventListener('click', function(){
+    var r = simulate(st);
+    var pts = [];
+    for(var y = 0; y <= st.years; y++) pts.push({t:y, v:r.s[y*12].bal});
+    pinned = {
+      st: Object.assign({}, st), pts: pts, final: r.final,
+      top: Math.max.apply(null, pts.map(function(p){ return p.v; })),
+      desc: eur(st.monthly) + '/mo · ' + st.ret + '% · ' + st.ter + '% fee · ' + st.years + 'y'
+    };
+    render();
+  });
+  document.getElementById('b-unpin').addEventListener('click', function(){ pinned = null; render(); });
+
+  document.getElementById('b-reset').addEventListener('click', function(){
+    st = Object.assign({}, DEF);
+    view = {real:false, mode:'simple', solve:'none'};
+    pinned = null;
+    render();
+  });
+
+  document.getElementById('b-share').addEventListener('click', function(){
+    var b = this;
+    encodeURL();
+    var done = function(ok){
+      b.textContent = ok ? 'Link copied ✓' : 'Press ⌘C';
+      setTimeout(function(){ b.textContent = 'Copy link'; }, 1800);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(location.href).then(function(){ done(true); }, function(){ done(false); });
+    else done(false);
+  });
+
+  var hd = document.getElementById('tbl-hd');
+  hd.addEventListener('click', function(){
+    document.getElementById('tbl-body').classList.toggle('on');
+    document.getElementById('tbl-chev').classList.toggle('on');
+  });
+}
+
+/* ══ URL state ═════════════════════════════════════════════════════════ */
+function encodeURL(){
+  var parts = FIELDS.map(function(k){ return st[k]; });
+  parts.push(st.target, view.real ? 1 : 0, view.mode === 'mc' ? 1 : 0, view.solve, curCode);
+  history.replaceState(null, '', '#' + parts.join('_'));
+}
+function decodeURL(){
+  var h = location.hash.replace(/^#/, '');
+  if(!h) return;
+  var p = h.split('_');
+  if(p.length < FIELDS.length + 1) return;
+  FIELDS.forEach(function(k, i){
+    var v = parseFloat(p[i]);
+    if(!isNaN(v)) st[k] = clampField(k, v);
+  });
+  var t = parseFloat(p[FIELDS.length]);
+  if(!isNaN(t)) st.target = t;
+  view.real = p[FIELDS.length + 1] === '1';
+  view.mode = p[FIELDS.length + 2] === '1' ? 'mc' : 'simple';
+  if(['none','monthly','years','ret'].indexOf(p[FIELDS.length + 3]) >= 0) view.solve = p[FIELDS.length + 3];
+  if(CURRENCIES.indexOf(p[FIELDS.length + 4]) >= 0){ curCode = p[FIELDS.length + 4]; buildFormatters(); }
+}
+
+/* ══ Go ════════════════════════════════════════════════════════════════ */
+decodeURL();
+bindInputs();
+bindHover();
+render();
+</script>
+</body>
+</html>
