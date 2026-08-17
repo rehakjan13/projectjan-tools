@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colour Vision Self-Check — Project Jan</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="description" content="An informal hue-arrangement self-check inspired by the Farnsworth D-15 test — arrange 16 tiles by hue and see where mixing shows up. Not a clinical diagnosis.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Colour Vision Self-Check — Project Jan">
+<meta property="og:description" content="Informal hue-arrangement self-check inspired by the Farnsworth D-15 test.">
+<meta property="og:image" content="https://projectjan.cz/favicon.png">
+<meta property="og:url" content="https://projectjan.cz/color/vision-test/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/ui.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/color/">Colorimetry</a> / Colour vision self-check</div>
+  <h1>Colour Vision Self-Check</h1>
+  <p class="sub">Inspired by the Farnsworth hue-arrangement tests. Drag the tiles into one smooth line from pink to blue.</p>
+
+  <div class="warn on" style="background:var(--pl);border-color:#C4B5FD">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="7" stroke="#6D28D9" stroke-width="1.3"/><path d="M8 7v4.5M8 4.5v.01" stroke="#6D28D9" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span style="color:var(--pt)"><strong>Not a clinical test.</strong> Screen colour reproduction, ambient light and display calibration all affect this. It's an informal self-check for awareness, not a diagnosis — if you get a consistently rough result, see an eye care professional or take a proper Ishihara / FM-100 test.</span>
+  </div>
+
+  <div class="modes">
+    <button type="button" class="mb on" id="lvl-beginner">Beginner<span class="ms">Bigger colour steps</span></button>
+    <button type="button" class="mb" id="lvl-advanced">Advanced<span class="ms">Smaller, harder-to-tell-apart steps</span></button>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><span class="lbl">Arrange by hue</span><span class="bdg ba">ends fixed — marked ★</span></div>
+    <p class="vt-legend">Drag a tile to a new spot. The two end tiles (pink and blue) stay put — arrange the rest into a smooth line between them.</p>
+    <div class="vt-surround"><div class="vt-grid" id="vt-grid"></div></div>
+    <div class="vt-endlabels"><span>← pink</span><span id="vt-step-info"></span><span>blue →</span></div>
+    <div class="arow" style="justify-content:center">
+      <button type="button" class="bghost" id="btn-shuffle">Shuffle again</button>
+      <button type="button" class="bcalc" id="btn-check" style="width:auto;padding:10px 24px">Check my arrangement</button>
+    </div>
+  </div>
+
+  <div id="vt-results"></div>
+
+  <div class="tcards" style="margin-top:1.5rem">
+    <a class="tcard" href="/color/training/">
+      <div class="tcard-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5.5C3 4.7 3.7 4 4.5 4H10v12H4.5c-.8 0-1.5-.7-1.5-1.5v-9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M17 5.5c0-.8-.7-1.5-1.5-1.5H10v12h5.5c.8 0 1.5-.7 1.5-1.5v-9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+      <div class="tcard-body"><strong>Back to training</strong><span>Why this matters for colour QC work</span></div>
+    </a>
+  </div>
+</div>
+
+<script src="../assets/colorspace.js"></script>
+<script src="../assets/deltae.js"></script>
+<script>
+(function () {
+  var N = 16;
+  var STEP = 20;
+  var START_HUE = 330; // pink-red
+  var L = 65;
+  var LEVELS = { beginner: { C: 32, label: 'Beginner' }, advanced: { C: 12, label: 'Advanced' } };
+  var level = 'beginner';
+
+  var tiles = [];
+  var arrangement = [];
+  var dragTileId = null;
+
+  function isFixedTile(tileId) { return tileId === 0 || tileId === N - 1; }
+
+  function buildTiles() {
+    var C = LEVELS[level].C;
+    tiles = [];
+    for (var i = 0; i < N; i++) {
+      var h = (START_HUE + i * STEP) % 360;
+      var lab = { L: L, a: C * ColorSpace.cosd(h), b: C * ColorSpace.sind(h) };
+      tiles.push({ id: i, hue: h, hex: ColorSpace.labToHex(lab) });
+    }
+    // Report the actual perceptual size of one step, computed live — not a guess.
+    var stepDE = DeltaE.ciede2000(
+      { L: L, a: C * ColorSpace.cosd(90), b: C * ColorSpace.sind(90) },
+      { L: L, a: C * ColorSpace.cosd(110), b: C * ColorSpace.sind(110) }
+    );
+    document.getElementById('vt-step-info').textContent = '~' + stepDE.toFixed(1) + ' ΔE00 per step';
+  }
+
+  function setLevel(newLevel) {
+    level = newLevel;
+    document.getElementById('lvl-beginner').classList.toggle('on', level === 'beginner');
+    document.getElementById('lvl-advanced').classList.toggle('on', level === 'advanced');
+    buildTiles();
+    shuffle();
+  }
+
+  function shuffle() {
+    var middle = tiles.slice(1, N - 1).map(function (t) { return t.id; });
+    for (var i = middle.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = middle[i]; middle[i] = middle[j]; middle[j] = tmp;
+    }
+    arrangement = [0].concat(middle).concat([N - 1]);
+    dragTileId = null;
+    document.getElementById('vt-results').innerHTML = '';
+    render();
+  }
+
+  function render() {
+    var grid = document.getElementById('vt-grid');
+    grid.innerHTML = arrangement.map(function (tileId) {
+      var tile = tiles[tileId];
+      var cls = 'vt-tile' + (isFixedTile(tileId) ? ' fixed' : '') + (tileId === dragTileId ? ' dragging' : '');
+      return '<div class="' + cls + '" style="background:' + tile.hex + '" data-tile-id="' + tileId + '"></div>';
+    }).join('');
+
+    Array.prototype.forEach.call(grid.querySelectorAll('.vt-tile:not(.fixed)'), function (el) {
+      el.addEventListener('pointerdown', function (e) {
+        dragTileId = parseInt(el.getAttribute('data-tile-id'), 10);
+        el.classList.add('dragging');
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        e.preventDefault();
+      });
+    });
+  }
+
+  function tileIdFromPoint(x, y) {
+    var els = document.getElementById('vt-grid').querySelectorAll('.vt-tile');
+    for (var i = 0; i < els.length; i++) {
+      var r = els[i].getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+        return parseInt(els[i].getAttribute('data-tile-id'), 10);
+      }
+    }
+    return null;
+  }
+
+  function onPointerMove(e) {
+    if (dragTileId == null) return;
+    var overId = tileIdFromPoint(e.clientX, e.clientY);
+    if (overId == null || isFixedTile(overId) || overId === dragTileId) return;
+    var fromPos = arrangement.indexOf(dragTileId);
+    var toPos = arrangement.indexOf(overId);
+    flipReorder(fromPos, toPos);
+  }
+
+  function onPointerUp() {
+    dragTileId = null;
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    render();
+  }
+
+  // FLIP: capture current tile positions, reorder the data + rebuild the grid,
+  // then animate every tile from where it *was* to where it now is — so
+  // dropping a tile between two others makes them slide apart instead of
+  // just instantly swapping.
+  function flipReorder(fromPos, toPos) {
+    var grid = document.getElementById('vt-grid');
+    var firstRects = {};
+    Array.prototype.forEach.call(grid.querySelectorAll('.vt-tile'), function (el) {
+      firstRects[el.getAttribute('data-tile-id')] = el.getBoundingClientRect();
+    });
+
+    var moved = arrangement.splice(fromPos, 1)[0];
+    arrangement.splice(toPos, 0, moved);
+    render();
+
+    Array.prototype.forEach.call(grid.querySelectorAll('.vt-tile'), function (el) {
+      var id = el.getAttribute('data-tile-id');
+      var first = firstRects[id];
+      if (!first) return;
+      var last = el.getBoundingClientRect();
+      var dx = first.left - last.left, dy = first.top - last.top;
+      if (!dx && !dy) return;
+      el.style.transition = 'none';
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      el.getBoundingClientRect(); // force reflow before re-enabling the transition
+      requestAnimationFrame(function () {
+        el.style.transition = 'transform .18s ease';
+        el.style.transform = '';
+      });
+    });
+  }
+
+  // Hue is circular even though the test *sequence* isn't looped — 350° and 10°
+  // are 20° apart, not 340°, so this always has to go through the short way round.
+  function circDiff(h1, h2) {
+    var d = Math.abs(h1 - h2) % 360;
+    return Math.min(d, 360 - d);
+  }
+
+  function describeArc(cx, cy, r, startAngle, endAngle) {
+    function pt(a) { var rad = a * Math.PI / 180; return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }; }
+    var start = pt(endAngle), end = pt(startAngle);
+    var largeArcFlag = (endAngle - startAngle) <= 180 ? '0' : '1';
+    return ['M', start.x.toFixed(1), start.y.toFixed(1), 'A', r, r, 0, largeArcFlag, 0, end.x.toFixed(1), end.y.toFixed(1)].join(' ');
+  }
+
+  function checkArrangement() {
+    var actualTotal = 0;
+    var localError = {}; // by tile id
+
+    for (var p = 0; p < N; p++) {
+      var curId = arrangement[p];
+      var dPrev = p > 0 ? circDiff(tiles[arrangement[p - 1]].hue, tiles[curId].hue) : null;
+      var dNext = p < N - 1 ? circDiff(tiles[curId].hue, tiles[arrangement[p + 1]].hue) : null;
+      if (dNext != null) actualTotal += dNext;
+
+      if (dPrev != null && dNext != null) localError[curId] = Math.max(0, (dPrev + dNext) / 2 - STEP);
+      else localError[curId] = Math.max(0, (dPrev != null ? dPrev : dNext) - STEP);
+    }
+
+    var idealTotal = (N - 1) * STEP; // 300° from pink to blue
+    var tes = Math.round(actualTotal - idealTotal);
+
+    function zoneError(centerHues) {
+      var sum = 0;
+      centerHues.forEach(function (center) {
+        for (var id = 0; id < N; id++) {
+          if (Math.min(Math.abs(tiles[id].hue - center), 360 - Math.abs(tiles[id].hue - center)) <= STEP) sum += localError[id];
+        }
+      });
+      return sum;
+    }
+    var redOrange = zoneError([330, 0, 30]);
+    var greenBlue = zoneError([150, 210, 270]);
+
+    renderResults(tes, localError, redOrange, greenBlue);
+  }
+
+  function renderResults(tes, localError, redOrange, greenBlue) {
+    var read;
+    if (tes <= 15) read = 'Very smooth — the line reads cleanly with little to no mixing.';
+    else if (tes <= 50) read = 'A small amount of mixing — well within what\'s typical, even for people with ordinary colour vision.';
+    else if (tes <= 110) read = 'Noticeable mixing in some zones. Could be screen/lighting, could be worth a proper test if this repeats.';
+    else read = 'A lot of mixing along the line. Screen and lighting can cause this too — but if you get a similarly high score again, consider a proper Ishihara or FM-100 test.';
+
+    var zoneNote = '';
+    if (tes > 30) {
+      if (redOrange > greenBlue * 1.5) zoneNote = 'Most of the mixing clustered around the <strong>pink/red/orange</strong> end.';
+      else if (greenBlue > redOrange * 1.5) zoneNote = 'Most of the mixing clustered around the <strong>green/blue</strong> end.';
+      else zoneNote = 'The mixing was spread fairly evenly, not concentrated at one end.';
+    }
+
+    var maxErr = Math.max.apply(null, tiles.map(function (t) { return localError[t.id]; }).concat([1]));
+    var size = 260, cx = size / 2, cy = size / 2, baseR = 55, spikeScale = (cx - baseR - 20) / Math.max(maxErr, 15);
+
+    var pathPts = tiles.map(function (t) {
+      var r = baseR + localError[t.id] * spikeScale;
+      var rad = (t.hue - 90) * Math.PI / 180; // -90 so hue 0 points up
+      return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+    });
+    var pathD = 'M' + pathPts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('L');
+    var baseArc = '<path d="' + describeArc(cx, cy, baseR, START_HUE - 90, START_HUE - 90 + (N - 1) * STEP) + '" fill="none" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>';
+    var dots = tiles.map(function (t) {
+      var rad = (t.hue - 90) * Math.PI / 180;
+      var x = cx + baseR * Math.cos(rad), y = cy + baseR * Math.sin(rad);
+      return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3" fill="' + t.hex + '" stroke="#fff" stroke-width="1"/>';
+    }).join('');
+
+    document.getElementById('vt-results').innerHTML =
+      '<div class="rcard" style="text-align:center">' +
+      '<div class="rl">Total Error Score</div>' +
+      '<div class="vt-score-big">' + tes + '</div>' +
+      '<p style="font-size:13.5px;color:var(--text);margin-top:.6rem;max-width:420px;margin-left:auto;margin-right:auto">' + read + (zoneNote ? ' ' + zoneNote : '') + '</p>' +
+      '</div>' +
+      '<div class="plot-box" style="max-width:280px;margin:.8rem auto">' +
+      '<svg viewBox="0 0 ' + size + ' ' + size + '">' + baseArc +
+      '<path d="' + pathD + '" fill="none" stroke="var(--p)" stroke-width="1.5"/>' + dots + '</svg>' +
+      '<div class="plot-note">error along the line — spikes = where tiles were hardest to place</div>' +
+      '</div>';
+
+    document.getElementById('vt-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.getElementById('btn-shuffle').addEventListener('click', shuffle);
+  document.getElementById('btn-check').addEventListener('click', checkArrangement);
+  document.getElementById('lvl-beginner').addEventListener('click', function () { setLevel('beginner'); });
+  document.getElementById('lvl-advanced').addEventListener('click', function () { setLevel('advanced'); });
+
+  buildTiles();
+  shuffle();
+})();
+</script>
+</body>
+</html>

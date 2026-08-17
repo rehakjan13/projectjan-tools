@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basic Colorimetry Quiz — Project Jan</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="description" content="10-question basic colorimetry quiz: CIELAB axes, illuminants, instrument geometry, Delta E formulas, and reading colour difference direction. 70% to pass.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Basic Colorimetry Quiz — Project Jan">
+<meta property="og:url" content="https://projectjan.cz/color/training/quiz/basic/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../assets/ui.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/color/">Colorimetry</a> / <a href="/color/training/">Training</a> / Testing / Quiz</div>
+  <h1>Basic Colorimetry Quiz</h1>
+  <p class="sub">10 questions, randomly drawn and shuffled each attempt. 70% (7/10) to pass. No penalty for retaking.</p>
+
+  <div id="quiz-area"></div>
+</div>
+
+<script src="../../../assets/store.js"></script>
+<script>
+(function () {
+  var N_QUESTIONS = 10, N_PROCEDURAL = 2, PASS_PCT = 70;
+  var area = document.getElementById('quiz-area');
+
+  // Embedded copy of data/quiz-basic.json — kept so this page works from file://
+  // (fetch() of local files is blocked by browsers outside http/https). On Netlify
+  // this could instead fetch the JSON directly; keep both in sync if you edit questions.
+  var STATIC_BANK = [
+  {
+    "id": "b1",
+    "topic": "why-lab",
+    "type": "single",
+    "text": "What is CIELAB (Lab) used for?",
+    "options": [
+      "Measuring how different two colours are, as a number",
+      "Making paint mix faster",
+      "Choosing font colours for a website",
+      "Calibrating a printer's paper feed"
+    ],
+    "correct": 0,
+    "explanation": "CIELAB gives colour difference a number (ΔE) that means roughly the same thing across different colours."
+  },
+  {
+    "id": "b2",
+    "topic": "why-lab",
+    "type": "single",
+    "text": "What does L* represent?",
+    "options": [
+      "Lightness (0 = black, 100 = white)",
+      "Hue angle",
+      "Saturation",
+      "Gloss level"
+    ],
+    "correct": 0,
+    "explanation": "L* is the lightness axis. a* and b* carry the colour (hue/saturation) information."
+  },
+  {
+    "id": "b3",
+    "topic": "axes",
+    "type": "single",
+    "text": "Which colour is on the +a* axis?",
+    "options": [
+      "Red",
+      "Green",
+      "Yellow",
+      "Blue"
+    ],
+    "correct": 0,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b4",
+    "topic": "axes",
+    "type": "single",
+    "text": "Which colour is on the −a* axis?",
+    "options": [
+      "Red",
+      "Green",
+      "Yellow",
+      "Blue"
+    ],
+    "correct": 1,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b5",
+    "topic": "axes",
+    "type": "single",
+    "text": "Which colour is on the +b* axis?",
+    "options": [
+      "Red",
+      "Green",
+      "Yellow",
+      "Blue"
+    ],
+    "correct": 2,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b6",
+    "topic": "axes",
+    "type": "single",
+    "text": "Which colour is on the −b* axis?",
+    "options": [
+      "Red",
+      "Green",
+      "Yellow",
+      "Blue"
+    ],
+    "correct": 3,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b7",
+    "topic": "axes",
+    "type": "single",
+    "text": "What does C* (chroma) tell you?",
+    "options": [
+      "How vivid/saturated a colour is",
+      "How light a colour is",
+      "What angle it was measured at",
+      "How glossy it is"
+    ],
+    "correct": 0,
+    "explanation": "C* is the distance from neutral grey — the higher it is, the more vivid the colour."
+  },
+  {
+    "id": "b8",
+    "topic": "illuminants",
+    "type": "single",
+    "text": "What is D65?",
+    "options": [
+      "A standard daylight illuminant",
+      "A type of gloss meter",
+      "A measurement geometry",
+      "A Delta E formula"
+    ],
+    "correct": 0,
+    "explanation": "D65 approximates average daylight. Other common ones: A (incandescent), F11 (fluorescent)."
+  },
+  {
+    "id": "b9",
+    "topic": "illuminants",
+    "type": "single",
+    "text": "What is metamerism?",
+    "options": [
+      "Two colours that match under one light but not another",
+      "A type of instrument calibration",
+      "A gloss measurement unit",
+      "A Delta E formula"
+    ],
+    "correct": 0,
+    "explanation": "Metamerism: colours that match under one illuminant can look different under another."
+  },
+  {
+    "id": "b10",
+    "topic": "illuminants",
+    "type": "single",
+    "text": "What does the observer angle (2° or 10°) describe?",
+    "options": [
+      "The field of view used to define colour matching",
+      "The angle light hits the panel",
+      "The angle of the sensor",
+      "The panel's tilt"
+    ],
+    "correct": 0,
+    "explanation": "2° and 10° are standard observer functions, not the instrument's measuring geometry."
+  },
+  {
+    "id": "b11",
+    "topic": "instrument",
+    "type": "single",
+    "text": "What geometry is the usual default for solid (non-metallic) colours?",
+    "options": [
+      "45/0",
+      "Sphere only",
+      "Multiangle only",
+      "No geometry needed"
+    ],
+    "correct": 0,
+    "explanation": "45/0 is standard for solid colours. Sphere (d/8) and multiangle are used for special cases."
+  },
+  {
+    "id": "b12",
+    "topic": "instrument",
+    "type": "single",
+    "text": "What do you calibrate a colour instrument against?",
+    "options": [
+      "A white standard",
+      "The master panel",
+      "Room lighting",
+      "The customer's screen"
+    ],
+    "correct": 0,
+    "explanation": "Every instrument needs calibrating against a white standard before measuring."
+  },
+  {
+    "id": "b13",
+    "topic": "instrument",
+    "type": "single",
+    "text": "Why do metallic colours need multiangle measurement?",
+    "options": [
+      "Because their colour changes with viewing angle",
+      "Because they're always darker",
+      "Because D65 doesn't work on them",
+      "Because they have no gloss"
+    ],
+    "correct": 0,
+    "explanation": "Metallics/pearls genuinely look different at different angles (flop) — one angle isn't enough."
+  },
+  {
+    "id": "b14",
+    "topic": "formulas",
+    "type": "single",
+    "text": "Which Delta E formula is the simplest, oldest one?",
+    "options": [
+      "CIE76",
+      "CIE94",
+      "CMC l:c",
+      "CIEDE2000"
+    ],
+    "correct": 0,
+    "explanation": "CIE76 (1976) is the original, simplest formula — a straight-line distance."
+  },
+  {
+    "id": "b15",
+    "topic": "formulas",
+    "type": "single",
+    "text": "Which formula is generally today's best practice?",
+    "options": [
+      "CIEDE2000",
+      "CIE76",
+      "CMC 1:1",
+      "They're all identical"
+    ],
+    "correct": 0,
+    "explanation": "CIEDE2000 (2000) is the most refined and the usual current default."
+  },
+  {
+    "id": "b16",
+    "topic": "formulas",
+    "type": "single",
+    "text": "In \"CMC 2:1\", what does the ratio describe?",
+    "options": [
+      "Lightness vs. chroma weighting",
+      "Two instruments vs. one",
+      "Two panels vs. one master",
+      "Gloss vs. colour weighting"
+    ],
+    "correct": 0,
+    "explanation": "l:c = 2:1 is the common 'acceptability' setting for how strictly lightness vs. chroma are weighted."
+  },
+  {
+    "id": "b17",
+    "topic": "reading",
+    "type": "single",
+    "text": "If ΔL* is positive, what does that mean about the sample?",
+    "options": [
+      "It's lighter than the master",
+      "It's darker than the master",
+      "It's more saturated",
+      "It's a different hue"
+    ],
+    "correct": 0,
+    "explanation": "Positive ΔL* = sample is lighter. Negative = darker."
+  },
+  {
+    "id": "b18",
+    "topic": "reading",
+    "type": "single",
+    "text": "If Δb* is positive, which way did the colour shift?",
+    "options": [
+      "Toward yellow",
+      "Toward blue",
+      "Toward red",
+      "Toward green"
+    ],
+    "correct": 0,
+    "explanation": "+b* is yellow, so a positive Δb* means the sample shifted toward yellow."
+  },
+  {
+    "id": "b19",
+    "topic": "reading",
+    "type": "single",
+    "text": "If Δa* is negative, which way did the colour shift?",
+    "options": [
+      "Toward green",
+      "Toward red",
+      "Toward yellow",
+      "Toward blue"
+    ],
+    "correct": 0,
+    "explanation": "−a* is green, so a negative Δa* means the sample shifted toward green."
+  },
+  {
+    "id": "b20",
+    "topic": "gloss",
+    "type": "single",
+    "text": "What does higher gloss typically do to how a colour looks?",
+    "options": [
+      "Makes it look darker and more saturated",
+      "Makes it look lighter and duller",
+      "Has no effect on appearance",
+      "Changes the hue angle only"
+    ],
+    "correct": 0,
+    "explanation": "More specular reflection at higher gloss tends to read as darker/more saturated."
+  }
+];
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function rnd(min, max) { return Math.random() * (max - min) + min; }
+
+  // Randomly generated each attempt (can't be memorized), but only asks for a
+  // sign read — same difficulty as "which colour is on the +a* axis?".
+  function makeProceduralQuestion(idx) {
+    var axis = ['L', 'a', 'b'][Math.floor(Math.random() * 3)];
+    var base = Math.round(rnd(20, 60));
+    var sign = Math.random() < 0.5 ? 1 : -1;
+    var delta = sign * Math.round(rnd(5, 15));
+    var master = base;
+    var sample = base + delta;
+
+    var byAxis = {
+      L: {
+        label: 'L*',
+        options: ['Lighter than the master', 'Darker than the master', 'More saturated', 'A different hue'],
+        correctIdx: sign > 0 ? 0 : 1
+      },
+      a: {
+        label: 'a*',
+        options: ['Toward red', 'Toward green', 'Toward yellow', 'Toward blue'],
+        correctIdx: sign > 0 ? 0 : 1
+      },
+      b: {
+        label: 'b*',
+        options: ['Toward yellow', 'Toward blue', 'Toward red', 'Toward green'],
+        correctIdx: sign > 0 ? 0 : 1
+      }
+    };
+    var pick = byAxis[axis];
+    var question = axis === 'L'
+      ? 'Master L* = ' + master + ', sample L* = ' + sample + '. What does that mean about the sample?'
+      : 'Master ' + pick.label + ' = ' + master + ', sample ' + pick.label + ' = ' + sample + '. Which way did the colour shift?';
+
+    return {
+      id: 'proc' + idx, topic: axis === 'L' ? 'reading' : 'axes',
+      type: 'single',
+      text: question,
+      options: pick.options,
+      correct: pick.correctIdx,
+      explanation: 'Δ' + pick.label + ' = ' + delta + ' (' + (sign > 0 ? 'positive' : 'negative') + ') → ' + pick.options[pick.correctIdx].toLowerCase() + '.'
+    };
+  }
+
+  function buildQuizSet() {
+    var staticPicked = shuffle(STATIC_BANK).slice(0, N_QUESTIONS - N_PROCEDURAL);
+    var procedural = [];
+    for (var i = 0; i < N_PROCEDURAL; i++) procedural.push(makeProceduralQuestion(i));
+    var all = shuffle(staticPicked.concat(procedural));
+    return all.map(function (q) {
+      var order = shuffle(q.options.map(function (opt, i) { return i; }));
+      return Object.assign({}, q, { displayOptions: order.map(function (i) { return q.options[i]; }), optionOrder: order });
+    });
+  }
+
+  var TOPIC_LABEL = { 'why-lab': 'Why Lab exists', axes: 'The axes', illuminants: 'Illuminants & observer', instrument: 'The instrument', formulas: 'Delta E formulas', reading: 'Reading the difference', gloss: 'Gloss & appearance' };
+  var TOPIC_ANCHOR = { 'why-lab': 'why-lab', axes: 'axes', illuminants: 'illuminants', instrument: 'instrument', formulas: 'formulas', reading: 'reading', gloss: 'gloss' };
+
+  var quiz = buildQuizSet();
+  var submitted = false;
+
+  function renderQuestion(q, idx) {
+    var name = 'q' + idx;
+    var body = q.displayOptions.map(function (opt, i) {
+      return '<label class="qopt" data-idx="' + idx + '" data-oi="' + i + '">' +
+        '<input type="radio" name="' + name + '" value="' + i + '" class="q-answer" data-idx="' + idx + '">' +
+        '<span>' + opt + '</span></label>';
+    }).join('');
+    return '<div class="carousel-slide"><div class="qcard" id="qcard-' + idx + '">' +
+      '<div class="qnum">Question ' + (idx + 1) + ' of ' + quiz.length + ' — ' + TOPIC_LABEL[q.topic] + '</div>' +
+      '<div class="qtext">' + q.text + '</div>' +
+      body +
+      '<div class="qexpl" id="qexpl-' + idx + '"></div>' +
+      '</div></div>';
+  }
+
+  var qIdx = 0;
+
+  function renderQuiz() {
+    qIdx = 0;
+    area.innerHTML =
+      '<div class="carousel-dots" id="q-dots"></div>' +
+      '<div class="carousel-viewport" id="q-viewport"><div class="carousel-track" id="q-track">' +
+      quiz.map(renderQuestion).join('') +
+      '</div></div>' +
+      '<div class="carousel-nav">' +
+      '<button type="button" class="bghost" id="q-prev">← Back</button>' +
+      '<span class="carousel-count" id="q-count"></span>' +
+      '<button type="button" class="bcalc" id="q-next" style="width:auto;padding:10px 24px">Next →</button>' +
+      '</div>' +
+      '<div id="q-results"></div>';
+
+    var dotsWrap = document.getElementById('q-dots');
+    quiz.forEach(function (q, i) {
+      var dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', 'Question ' + (i + 1));
+      dot.addEventListener('click', function () { goToQ(i); });
+      dotsWrap.appendChild(dot);
+    });
+
+    document.getElementById('q-prev').addEventListener('click', function () { goToQ(qIdx - 1); });
+    document.getElementById('q-next').addEventListener('click', function () {
+      if (submitted) {
+        document.getElementById('q-results').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      if (qIdx === quiz.length - 1) { gradeAndShow(); return; }
+      goToQ(qIdx + 1);
+    });
+
+    var vp = document.getElementById('q-viewport');
+    var touchStartX = null;
+    vp.addEventListener('touchstart', function (e) { touchStartX = e.touches[0].clientX; }, { passive: true });
+    vp.addEventListener('touchend', function (e) {
+      if (touchStartX == null) return;
+      var dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 40) goToQ(dx < 0 ? qIdx + 1 : qIdx - 1);
+      touchStartX = null;
+    }, { passive: true });
+
+    goToQ(0);
+  }
+
+  function goToQ(i) {
+    qIdx = Math.max(0, Math.min(quiz.length - 1, i));
+    document.getElementById('q-track').style.transform = 'translateX(-' + (qIdx * 100) + '%)';
+    document.querySelectorAll('#q-dots .carousel-dot').forEach(function (d, di) { d.classList.toggle('active', di === qIdx); });
+    document.getElementById('q-count').textContent = (qIdx + 1) + ' / ' + quiz.length;
+    document.getElementById('q-prev').style.visibility = qIdx === 0 ? 'hidden' : 'visible';
+    var nextBtn = document.getElementById('q-next');
+    if (submitted) nextBtn.textContent = 'See results ↓';
+    else nextBtn.textContent = qIdx === quiz.length - 1 ? 'Submit answers' : 'Next →';
+  }
+
+  function getUserAnswer(q, idx) {
+    var checked = document.querySelector('.q-answer[data-idx="' + idx + '"]:checked');
+    return checked ? parseInt(checked.value, 10) : null;
+  }
+
+  function isCorrect(q, userAnswer) {
+    return userAnswer != null && q.optionOrder[userAnswer] === q.correct;
+  }
+
+  function gradeAndShow() {
+    if (submitted) return;
+    submitted = true;
+
+    var results = quiz.map(function (q, idx) {
+      var ua = getUserAnswer(q, idx);
+      var correct = isCorrect(q, ua);
+      return { q: q, idx: idx, correct: correct };
+    });
+
+    var dots = document.querySelectorAll('#q-dots .carousel-dot');
+
+    results.forEach(function (r) {
+      var card = document.getElementById('qcard-' + r.idx);
+      card.querySelectorAll('input').forEach(function (el) { el.disabled = true; });
+
+      var correctDisplayIdx = r.q.optionOrder.indexOf(r.q.correct);
+      card.querySelectorAll('.qopt').forEach(function (label) {
+        var oi = parseInt(label.getAttribute('data-oi'), 10);
+        label.classList.add(oi === correctDisplayIdx ? 'correct' : 'incorrect');
+        if (label.querySelector('input').checked) {
+          label.classList.add('picked');
+          label.querySelector('span').insertAdjacentHTML('beforeend', ' <em style="opacity:.7;font-style:normal">— your answer</em>');
+        }
+      });
+
+      var expl = document.getElementById('qexpl-' + r.idx);
+      expl.textContent = (r.correct ? '✓ Correct. ' : '✕ ') + r.q.explanation;
+      expl.classList.add('on');
+
+      dots[r.idx].classList.add(r.correct ? 'correct' : 'incorrect');
+    });
+
+    var correctCount = results.filter(function (r) { return r.correct; }).length;
+    var pct = Math.round((correctCount / quiz.length) * 100);
+    var pass = pct >= PASS_PCT;
+
+    var byTopic = {};
+    results.forEach(function (r) {
+      var t = r.q.topic;
+      byTopic[t] = byTopic[t] || { correct: 0, total: 0 };
+      byTopic[t].total++;
+      if (r.correct) byTopic[t].correct++;
+    });
+
+    var topicRows = Object.keys(byTopic).map(function (t) {
+      var b = byTopic[t];
+      var weak = b.correct < b.total;
+      return '<div class="topic-row"><span>' + TOPIC_LABEL[t] + '</span>' +
+        '<span>' + b.correct + '/' + b.total + (weak ? ' — <a href="/color/training/#' + TOPIC_ANCHOR[t] + '">review</a>' : ' ✓') + '</span></div>';
+    }).join('');
+
+    var summary = '<div class="rcard qresult">' +
+      '<div class="big">' + pct + '%</div>' +
+      '<div class="badge ' + (pass ? 'badge-pass' : 'badge-fail') + '" style="margin-top:6px">' + (pass ? '✓ PASS' : '✕ FAIL — 70% required') + '</div>' +
+      '<p style="margin-top:.8rem;font-size:13px;color:var(--muted)">' + correctCount + ' of ' + quiz.length + ' correct. Swipe back through the questions to review explanations.</p>' +
+      '</div>' +
+      '<div class="rcard"><div class="rl">By topic</div>' + topicRows + '</div>' +
+      '<button type="button" class="bcalc" id="btn-retake">Retake quiz</button>';
+
+    document.getElementById('q-results').innerHTML = summary;
+    goToQ(qIdx);
+    document.getElementById('btn-retake').addEventListener('click', function () {
+      quiz = buildQuizSet();
+      submitted = false;
+      renderQuiz();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    Store.addQuizAttempt({ level: 'basic', pct: pct, pass: pass, correctCount: correctCount, total: quiz.length });
+    if (pass) Store.markModuleComplete('quiz-basic');
+
+    document.getElementById('q-results').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') goToQ(qIdx + 1);
+    if (e.key === 'ArrowLeft') goToQ(qIdx - 1);
+  });
+
+  renderQuiz();
+})();
+</script>
+</body>
+</html>

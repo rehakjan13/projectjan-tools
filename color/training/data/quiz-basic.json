@@ -1,0 +1,152 @@
+[
+  {
+    "id": "b1", "topic": "why-lab", "type": "single",
+    "text": "What is CIELAB (Lab) used for?",
+    "options": [
+      "Measuring how different two colours are, as a number",
+      "Making paint mix faster",
+      "Choosing font colours for a website",
+      "Calibrating a printer's paper feed"
+    ],
+    "correct": 0,
+    "explanation": "CIELAB gives colour difference a number (ΔE) that means roughly the same thing across different colours."
+  },
+  {
+    "id": "b2", "topic": "why-lab", "type": "single",
+    "text": "What does L* represent?",
+    "options": ["Lightness (0 = black, 100 = white)", "Hue angle", "Saturation", "Gloss level"],
+    "correct": 0,
+    "explanation": "L* is the lightness axis. a* and b* carry the colour (hue/saturation) information."
+  },
+  {
+    "id": "b3", "topic": "axes", "type": "single",
+    "text": "Which colour is on the +a* axis?",
+    "options": ["Red", "Green", "Yellow", "Blue"],
+    "correct": 0,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b4", "topic": "axes", "type": "single",
+    "text": "Which colour is on the −a* axis?",
+    "options": ["Red", "Green", "Yellow", "Blue"],
+    "correct": 1,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b5", "topic": "axes", "type": "single",
+    "text": "Which colour is on the +b* axis?",
+    "options": ["Red", "Green", "Yellow", "Blue"],
+    "correct": 2,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b6", "topic": "axes", "type": "single",
+    "text": "Which colour is on the −b* axis?",
+    "options": ["Red", "Green", "Yellow", "Blue"],
+    "correct": 3,
+    "explanation": "+a* = red, −a* = green, +b* = yellow, −b* = blue."
+  },
+  {
+    "id": "b7", "topic": "axes", "type": "single",
+    "text": "What does C* (chroma) tell you?",
+    "options": ["How vivid/saturated a colour is", "How light a colour is", "What angle it was measured at", "How glossy it is"],
+    "correct": 0,
+    "explanation": "C* is the distance from neutral grey — the higher it is, the more vivid the colour."
+  },
+  {
+    "id": "b8", "topic": "illuminants", "type": "single",
+    "text": "What is D65?",
+    "options": ["A standard daylight illuminant", "A type of gloss meter", "A measurement geometry", "A Delta E formula"],
+    "correct": 0,
+    "explanation": "D65 approximates average daylight. Other common ones: A (incandescent), F11 (fluorescent)."
+  },
+  {
+    "id": "b9", "topic": "illuminants", "type": "single",
+    "text": "What is metamerism?",
+    "options": [
+      "Two colours that match under one light but not another",
+      "A type of instrument calibration",
+      "A gloss measurement unit",
+      "A Delta E formula"
+    ],
+    "correct": 0,
+    "explanation": "Metamerism: colours that match under one illuminant can look different under another."
+  },
+  {
+    "id": "b10", "topic": "illuminants", "type": "single",
+    "text": "What does the observer angle (2° or 10°) describe?",
+    "options": ["The field of view used to define colour matching", "The angle light hits the panel", "The angle of the sensor", "The panel's tilt"],
+    "correct": 0,
+    "explanation": "2° and 10° are standard observer functions, not the instrument's measuring geometry."
+  },
+  {
+    "id": "b11", "topic": "instrument", "type": "single",
+    "text": "What geometry is the usual default for solid (non-metallic) colours?",
+    "options": ["45/0", "Sphere only", "Multiangle only", "No geometry needed"],
+    "correct": 0,
+    "explanation": "45/0 is standard for solid colours. Sphere (d/8) and multiangle are used for special cases."
+  },
+  {
+    "id": "b12", "topic": "instrument", "type": "single",
+    "text": "What do you calibrate a colour instrument against?",
+    "options": ["A white standard", "The master panel", "Room lighting", "The customer's screen"],
+    "correct": 0,
+    "explanation": "Every instrument needs calibrating against a white standard before measuring."
+  },
+  {
+    "id": "b13", "topic": "instrument", "type": "single",
+    "text": "Why do metallic colours need multiangle measurement?",
+    "options": ["Because their colour changes with viewing angle", "Because they're always darker", "Because D65 doesn't work on them", "Because they have no gloss"],
+    "correct": 0,
+    "explanation": "Metallics/pearls genuinely look different at different angles (flop) — one angle isn't enough."
+  },
+  {
+    "id": "b14", "topic": "formulas", "type": "single",
+    "text": "Which Delta E formula is the simplest, oldest one?",
+    "options": ["CIE76", "CIE94", "CMC l:c", "CIEDE2000"],
+    "correct": 0,
+    "explanation": "CIE76 (1976) is the original, simplest formula — a straight-line distance."
+  },
+  {
+    "id": "b15", "topic": "formulas", "type": "single",
+    "text": "Which formula is generally today's best practice?",
+    "options": ["CIEDE2000", "CIE76", "CMC 1:1", "They're all identical"],
+    "correct": 0,
+    "explanation": "CIEDE2000 (2000) is the most refined and the usual current default."
+  },
+  {
+    "id": "b16", "topic": "formulas", "type": "single",
+    "text": "In \"CMC 2:1\", what does the ratio describe?",
+    "options": ["Lightness vs. chroma weighting", "Two instruments vs. one", "Two panels vs. one master", "Gloss vs. colour weighting"],
+    "correct": 0,
+    "explanation": "l:c = 2:1 is the common 'acceptability' setting for how strictly lightness vs. chroma are weighted."
+  },
+  {
+    "id": "b17", "topic": "reading", "type": "single",
+    "text": "If ΔL* is positive, what does that mean about the sample?",
+    "options": ["It's lighter than the master", "It's darker than the master", "It's more saturated", "It's a different hue"],
+    "correct": 0,
+    "explanation": "Positive ΔL* = sample is lighter. Negative = darker."
+  },
+  {
+    "id": "b18", "topic": "reading", "type": "single",
+    "text": "If Δb* is positive, which way did the colour shift?",
+    "options": ["Toward yellow", "Toward blue", "Toward red", "Toward green"],
+    "correct": 0,
+    "explanation": "+b* is yellow, so a positive Δb* means the sample shifted toward yellow."
+  },
+  {
+    "id": "b19", "topic": "reading", "type": "single",
+    "text": "If Δa* is negative, which way did the colour shift?",
+    "options": ["Toward green", "Toward red", "Toward yellow", "Toward blue"],
+    "correct": 0,
+    "explanation": "−a* is green, so a negative Δa* means the sample shifted toward green."
+  },
+  {
+    "id": "b20", "topic": "gloss", "type": "single",
+    "text": "What does higher gloss typically do to how a colour looks?",
+    "options": ["Makes it look darker and more saturated", "Makes it look lighter and duller", "Has no effect on appearance", "Changes the hue angle only"],
+    "correct": 0,
+    "explanation": "More specular reflection at higher gloss tends to read as darker/more saturated."
+  }
+]

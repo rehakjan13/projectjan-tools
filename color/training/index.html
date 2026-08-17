@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colorimetry Training — Project Jan</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="description" content="A plain-language introduction to colour measurement for coating colorists and QC technicians: CIELAB, illuminants and metamerism, instrument geometry, the four Delta E formulas, and how to read ΔL/ΔC/ΔH.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Colorimetry Training — Project Jan">
+<meta property="og:description" content="Plain-language colorimetry training: Lab, illuminants, instrument geometry, Delta E formulas, reading the difference.">
+<meta property="og:image" content="https://projectjan.cz/favicon.png">
+<meta property="og:url" content="https://projectjan.cz/color/training/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/ui.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "name": "Colorimetry Training",
+  "description": "Introduction to colour measurement for coating colorists: CIELAB, illuminants, instrument geometry, Delta E formulas.",
+  "provider": {"@type": "Organization", "name": "Project Jan", "url": "https://projectjan.cz"}
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/color/">Colorimetry</a> / Training</div>
+  <h1>Colorimetry Training</h1>
+  <p class="sub">7 short slides, swipe or tap through. It's here so the numbers in the <a href="/color/delta-e/">Delta E Calculator</a> mean something. Forgot a term? Check the <a href="/color/glossary/">glossary</a>.</p>
+
+  <div class="carousel-dots" id="dots"></div>
+
+  <div class="carousel-viewport" id="viewport">
+    <div class="carousel-track" id="track">
+
+      <div class="carousel-slide">
+        <div class="tsec" id="why-lab">
+          <h3>1. Why Lab exists</h3>
+          <ul>
+            <li>Two people can look at the same panel and disagree how far off it is — measurement gives everyone the same number to argue from.</li>
+            <li>Plain RGB isn't perceptually uniform: the same numeric step can look like a bigger or smaller difference depending on where it sits in the space.</li>
+            <li><strong>CIELAB</strong> (1976) was built so equal numeric distances ≈ equal perceived differences — that's what makes "ΔE = 1.2" mean the same thing across completely different colours.</li>
+          </ul>
+          <div class="swatch-compare" id="uniformity-demo"></div>
+          <div class="callout">L* = lightness (0 black → 100 white) · a* = red↔green · b* = yellow↔blue.</div>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="axes">
+          <h3>2. The axes: L*, a*, b*, C*, h</h3>
+          <ul>
+            <li><strong>C* (chroma)</strong> = distance from neutral grey = √(a*² + b*²) — how vivid the colour is.</li>
+            <li><strong>h (hue angle)</strong> = atan2(b*, a*), 0°–360° — 0° red-ish, 90° yellow, 180° green, 270° blue.</li>
+          </ul>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:.3rem">Try it — this is the exact plane the calculator draws under every result:</p>
+          <div class="slider-row">
+            <label style="min-width:26px;margin:0">L*</label>
+            <input type="range" id="demo-L" min="10" max="95" value="55" step="1">
+            <output id="demo-L-out">55</output>
+          </div>
+          <div class="slider-row">
+            <label style="min-width:26px;margin:0">a*</label>
+            <input type="range" id="demo-a" min="-90" max="90" value="30" step="1">
+            <output id="demo-a-out">30</output>
+          </div>
+          <div class="slider-row">
+            <label style="min-width:26px;margin:0">b*</label>
+            <input type="range" id="demo-b" min="-90" max="90" value="-40" step="1">
+            <output id="demo-b-out">-40</output>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:1rem">
+            <div id="demo-swatch" style="width:140px;height:140px;border-radius:16px;border:1px solid var(--border);flex-shrink:0"></div>
+            <div style="font-size:13.5px;color:var(--muted);line-height:1.7;text-align:center">
+              C* = <b id="demo-C" style="color:var(--text)">—</b> · h = <b id="demo-h" style="color:var(--text)">—</b>° · hue family: <b id="demo-hue-name" style="color:var(--pt)">—</b>
+              <div id="demo-gamut-note" style="color:var(--o);font-style:italic;display:none">outside sRGB — swatch is clamped, not exact</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="illuminants">
+          <h3>3. Illuminants &amp; observer</h3>
+          <ul>
+            <li>Colour = light source + object + eye. Change the light, the same panel can measure differently.</li>
+            <li><strong>Illuminant</strong> = standardized light (D65 daylight, A incandescent, F11 fluorescent). <strong>Observer</strong> = 2°/10° field of view behind the colour-matching functions.</li>
+            <li><strong>Metamerism:</strong> two panels match under one light, clash under another — the most common cause of "it matched in the booth, not at the loading dock".</li>
+          </ul>
+          <div class="illum-row" id="illum-demo">
+            <div class="illum-item"><div class="sw" style="background:#8B7BB8"></div><span>D65</span></div>
+            <div class="illum-item"><div class="sw" style="background:#A3785F"></div><span>A</span></div>
+            <div class="illum-item"><div class="sw" style="background:#7B8AA0"></div><span>F11</span></div>
+          </div>
+          <p style="font-size:11px;color:var(--hint);margin-top:-.4rem">Illustrative shift only, not a spectral simulation.</p>
+          <div class="callout">Always record which illuminant/observer a master was measured under — the calculator warns when master and sample don't match.</div>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="instrument">
+          <h3>4. The instrument</h3>
+          <ul>
+            <li><strong>45/0</strong> (or 0/45): light at 45°, reads straight on — default for solid colours.</li>
+            <li><strong>Sphere (d/8):</strong> integrates light from every direction — used when gloss shouldn't influence the reading.</li>
+            <li><strong>Multiangle</strong> (15°/45°/110°): required for metallics/pearls — the colour genuinely changes with viewing angle.</li>
+            <li>Always: calibrate on the white standard, and let the panel reach the state you'll judge it in before measuring.</li>
+          </ul>
+          <svg class="geo-diagram" viewBox="0 0 220 130">
+            <line x1="10" y1="115" x2="210" y2="115" stroke="var(--border)" stroke-width="3"/>
+            <line x1="110" y1="115" x2="110" y2="20" stroke="var(--p)" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <line x1="35" y1="60" x2="108" y2="113" stroke="var(--o)" stroke-width="2.5" marker-end="url(#gd-arrow)"/>
+            <line x1="112" y1="20" x2="112" y2="90" stroke="var(--g)" stroke-width="2.5" marker-end="url(#gd-arrow-g)"/>
+            <text x="20" y="52" font-size="11" fill="var(--ot)" font-family="'JetBrains Mono',monospace">light 45°</text>
+            <text x="118" y="30" font-size="11" fill="var(--gt)" font-family="'JetBrains Mono',monospace">sensor 0°</text>
+            <defs>
+              <marker id="gd-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--o)"/></marker>
+              <marker id="gd-arrow-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--g)"/></marker>
+            </defs>
+          </svg>
+          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.6rem">45/0 geometry — the common default for solid colours</p>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="formulas">
+          <h3>5. Why four Delta E formulas</h3>
+          <ul>
+            <li><strong>CIE76:</strong> straight-line distance — oldest, overstates differences in saturated colours.</li>
+            <li><strong>CIE94:</strong> stretches the tolerance based on chroma.</li>
+            <li><strong>CMC l:c:</strong> weights lightness vs. chroma independently (2:1 = acceptability default, 1:1 = stricter).</li>
+            <li><strong>CIEDE2000:</strong> current best practice — also corrects a known hue-rotation issue in blue tones.</li>
+          </ul>
+          <div class="mini-ellipses" id="ellipse-demo"></div>
+          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.4rem">Same numeric tolerance, same colour — four different tolerance shapes</p>
+          <div class="callout">Agree the formula + tolerance with your customer upfront — a batch can pass on one and fail on another, and that's not a bug in either number.</div>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="reading">
+          <h3>6. Reading the difference</h3>
+          <ul>
+            <li>ΔE tells you <em>how much</em> — it says nothing about <em>which way</em> to correct.</li>
+            <li>ΔL*/ΔC*/ΔH* (or ΔL*/Δa*/Δb*) give the direction: darker/lighter, more/less saturated, and which hue family the shift leans toward.</li>
+            <li>+b* is yellow — a positive Δb* means the sample went yellower, so the correction direction is toward blue.</li>
+          </ul>
+          <div class="plot-box" style="max-width:280px;margin:.8rem auto 0">
+            <svg id="reading-demo-plot" viewBox="0 0 300 300"></svg>
+            <div class="plot-note">example — try your own numbers in the calculator</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="gloss">
+          <h3>7. Gloss &amp; appearance</h3>
+          <ul>
+            <li>Higher gloss → more specular reflection → tends to read <strong>darker and more saturated</strong>, even at identical Lab values.</li>
+            <li>A ΔE of 0.8 can look wrong on the shop floor if the gloss units (GU) drifted enough.</li>
+            <li>A master record should carry a gloss value and tolerance alongside L*a*b* — not just the colour.</li>
+          </ul>
+          <div class="gloss-compare">
+            <div><div class="gloss-sw" style="background:#6B6560"></div><div class="gloss-label">matte</div></div>
+            <div><div class="gloss-sw glossy" style="background:#3F3B38"></div><div class="gloss-label">glossy</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="carousel-nav">
+    <button type="button" class="bghost" id="btn-prev">← Back</button>
+    <span class="carousel-count" id="slide-count">1 / 7</span>
+    <button type="button" class="bcalc" id="btn-next" style="width:auto;padding:10px 24px">Next →</button>
+  </div>
+
+  <div class="tcards" style="margin-top:2rem">
+    <a class="tcard" href="quiz/basic/">
+      <div class="tcard-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14l3-3 2 2 4-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.4"/></svg></div>
+      <div class="tcard-body"><strong>Take the basic quiz</strong><span>10 questions, 70% to pass, retake any time</span></div>
+    </a>
+    <a class="tcard" href="/color/delta-e/">
+      <div class="tcard-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/></svg></div>
+      <div class="tcard-body"><strong>Back to the calculator</strong><span>Put this to work on a real master/sample pair</span></div>
+    </a>
+  </div>
+</div>
+<script src="../assets/colorspace.js"></script>
+<script src="../assets/deltae.js"></script>
+<script src="../assets/interpret.js"></script>
+<script src="../assets/plot.js"></script>
+<script src="../assets/store.js"></script>
+<script>
+(function () {
+  Store.markModuleComplete('training-intro');
+
+  // ---- carousel ----
+  var track = document.getElementById('track');
+  var slides = document.querySelectorAll('.carousel-slide');
+  var dotsWrap = document.getElementById('dots');
+  var TOPICS = ['why-lab', 'axes', 'illuminants', 'instrument', 'formulas', 'reading', 'gloss'];
+  var idx = 0;
+
+  TOPICS.forEach(function (topic, i) {
+    var dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+    dot.addEventListener('click', function () { goTo(i); });
+    dotsWrap.appendChild(dot);
+  });
+  var dots = dotsWrap.querySelectorAll('.carousel-dot');
+
+  function goTo(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+    dots.forEach(function (d, di) { d.classList.toggle('active', di === idx); });
+    document.getElementById('slide-count').textContent = (idx + 1) + ' / ' + slides.length;
+    document.getElementById('btn-prev').style.visibility = idx === 0 ? 'hidden' : 'visible';
+    var nextBtn = document.getElementById('btn-next');
+    nextBtn.textContent = idx === slides.length - 1 ? 'Take the quiz →' : 'Next →';
+    history.replaceState(null, '', '#' + TOPICS[idx]);
+  }
+
+  document.getElementById('btn-prev').addEventListener('click', function () { goTo(idx - 1); });
+  document.getElementById('btn-next').addEventListener('click', function () {
+    if (idx === slides.length - 1) { window.location.href = 'quiz/basic/'; return; }
+    goTo(idx + 1);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') goTo(idx + 1);
+    if (e.key === 'ArrowLeft') goTo(idx - 1);
+  });
+
+  var viewport = document.getElementById('viewport');
+  var touchStartX = null;
+  viewport.addEventListener('touchstart', function (e) { touchStartX = e.touches[0].clientX; }, { passive: true });
+  viewport.addEventListener('touchend', function (e) {
+    if (touchStartX == null) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) goTo(dx < 0 ? idx + 1 : idx - 1);
+    touchStartX = null;
+  }, { passive: true });
+
+  var startIdx = TOPICS.indexOf(location.hash.replace('#', ''));
+  goTo(startIdx >= 0 ? startIdx : 0);
+
+  // ---- slide 1: perceptual uniformity demo (two pairs, same CIE76 ΔE) ----
+  (function () {
+    var pairs = [
+      { name: 'near neutral', m: { L: 55, a: 0, b: 0 }, s: { L: 55, a: 5, b: 0 } },
+      { name: 'saturated blue', m: { L: 45, a: 15, b: -40 }, s: { L: 45, a: 20, b: -40 } }
+    ];
+    var wrap = document.getElementById('uniformity-demo');
+    wrap.innerHTML = pairs.map(function (p) {
+      var de = DeltaE.cie76(p.m, p.s);
+      var hexM = ColorSpace.labToHex(p.m), hexS = ColorSpace.labToHex(p.s);
+      return '<div><div class="swatch-pair">' +
+        '<div class="sw" style="background:' + hexM + '"></div>' +
+        '<div class="sw" style="background:' + hexS + '"></div></div>' +
+        '<div class="swatch-caption">' + p.name + '<br>ΔE*ab = ' + de.toFixed(1) + '</div></div>';
+    }).join('');
+  })();
+
+  // ---- slide 2: interactive Lab slider ----
+  var L = document.getElementById('demo-L'), a = document.getElementById('demo-a'), b = document.getElementById('demo-b');
+  var out = { L: document.getElementById('demo-L-out'), a: document.getElementById('demo-a-out'), b: document.getElementById('demo-b-out') };
+  var swatch = document.getElementById('demo-swatch');
+  var elC = document.getElementById('demo-C'), elH = document.getElementById('demo-h'), elName = document.getElementById('demo-hue-name'), elGamut = document.getElementById('demo-gamut-note');
+  var HUE_LABEL = { hueRed: 'red', hueOrange: 'orange', hueYellow: 'yellow', hueYellowGreen: 'yellow-green', hueGreen: 'green', hueCyan: 'cyan', hueBlue: 'blue', hueViolet: 'violet' };
+
+  function updateAxesDemo() {
+    var lab = { L: parseFloat(L.value), a: parseFloat(a.value), b: parseFloat(b.value) };
+    out.L.textContent = lab.L; out.a.textContent = lab.a; out.b.textContent = lab.b;
+    var lch = ColorSpace.labToLch(lab);
+    elC.textContent = lch.C.toFixed(1);
+    elH.textContent = lch.h.toFixed(0);
+    elName.textContent = HUE_LABEL[Interpret.hueSectorKey(lch.h)];
+    var rgb = ColorSpace.labToSrgb(lab);
+    swatch.style.background = 'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
+    elGamut.style.display = rgb.outOfGamut ? 'block' : 'none';
+  }
+  [L, a, b].forEach(function (el) { el.addEventListener('input', updateAxesDemo); });
+  updateAxesDemo();
+
+  // ---- slide 5: tolerance-shape comparison across formulas ----
+  (function () {
+    var exampleMaster = { L: 50, a: 20, b: -30 };
+    var tol = 1.0;
+    var formulas = [
+      { key: 'cie76', label: 'CIE76', opts: {} },
+      { key: 'cie94', label: 'CIE94', opts: {} },
+      { key: 'cmc', label: 'CMC 2:1', opts: { l: 2, c: 1 } },
+      { key: 'ciede2000', label: 'CIEDE2000', opts: {} }
+    ];
+    var geos = formulas.map(function (f) { return Plot.toleranceGeometry(f.key, exampleMaster, tol, f.opts); });
+    var maxR = Math.max.apply(null, geos.map(function (g) { return Math.max(g.radiusC, g.radiusH); }));
+    var size = 80, cx = 40, cy = 40, half = cx - 16;
+    var scale = half / maxR;
+
+    var wrap = document.getElementById('ellipse-demo');
+    wrap.innerHTML = formulas.map(function (f, i) {
+      var g = geos[i];
+      var rx = Math.max(2, g.radiusC * scale), ry = Math.max(2, g.radiusH * scale);
+      var svg = '<svg viewBox="0 0 ' + size + ' ' + size + '">' +
+        '<line x1="' + (cx - half) + '" y1="' + cy + '" x2="' + (cx + half) + '" y2="' + cy + '" stroke="var(--border)" stroke-width="1"/>' +
+        '<line x1="' + cx + '" y1="' + (cy - half) + '" x2="' + cx + '" y2="' + (cy + half) + '" stroke="var(--border)" stroke-width="1"/>' +
+        '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + (-g.angleDeg) + ' ' + cx + ' ' + cy + ')" fill="var(--pl)" fill-opacity="0.8" stroke="var(--p)" stroke-width="1.5"/>' +
+        '</svg>';
+      return '<div class="mini-ellipse-item">' + svg + '<span>' + f.label + '</span></div>';
+    }).join('');
+  })();
+
+  // ---- slide 6: illustrative direction plot ----
+  Plot.renderABPlane(document.getElementById('reading-demo-plot'), {
+    master: { L: 50, a: 5, b: -25 },
+    sample: { L: 48.3, a: 5.6, b: -27.8 },
+    formulaKey: 'ciede2000', tolerance: 1.2, formulaOpts: {},
+    t: function (k) { return k; }
+  });
+})();
+</script>
+</body>
+</html>

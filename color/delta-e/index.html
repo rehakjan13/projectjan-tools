@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delta E Calculator — Project Jan</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="description" content="Free Delta E calculator — CIE76, CIE94, CMC l:c and CIEDE2000 colour difference, with master panel library, tolerance pass/fail and plain-language interpretation. Built for the tablet next to the spectrophotometer.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Delta E Calculator — Project Jan">
+<meta property="og:description" content="CIELAB colour difference calculator: CIE76, CIE94, CMC l:c, CIEDE2000. Master panel library, tolerances, plain-language direction of correction.">
+<meta property="og:image" content="https://projectjan.cz/favicon.png">
+<meta property="og:url" content="https://projectjan.cz/color/delta-e/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Delta E Calculator — Project Jan">
+<meta name="twitter:description" content="CIELAB colour difference calculator: CIE76, CIE94, CMC l:c, CIEDE2000.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/ui.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Delta E Calculator",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Any (web browser)",
+  "description": "CIELAB colour difference calculator supporting CIE76, CIE94, CMC l:c and CIEDE2000, with master panel library and tolerance pass/fail.",
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+  "url": "https://projectjan.cz/color/delta-e/"
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/color/">Colorimetry</a> / Color Measurements</div>
+  <h1>Delta E Calculator</h1>
+  <p class="sub">CIE76 · CIE94 · CMC l:c · CIEDE2000 — enter Lab values, compare against a saved master, see which way to correct. New to this? <a href="/color/training/">start with the intro</a> or check the <a href="/color/glossary/">glossary</a>.</p>
+
+  <div class="warn" id="geo-warn">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L15 14H1L8 1z" stroke="#92400E" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v3.5M8 11.5v.01" stroke="#92400E" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span id="geo-warn-text"></span>
+  </div>
+
+  <div class="modes">
+    <button class="mb on" id="tab-manual" type="button">Manual<span class="ms">Type L*a*b* directly</span></button>
+    <button class="mb" id="tab-paste" type="button">Paste<span class="ms">From Excel or a printout</span></button>
+  </div>
+
+  <!-- MANUAL MODE -->
+  <div id="mode-manual">
+    <div class="card card-input">
+      <div class="card-hd"><span class="lbl">Master</span><span class="bdg ba">reference</span></div>
+      <div class="gr g4">
+        <div><label>Name</label><input type="text" id="m-name" placeholder="e.g. Master A"></div>
+        <div><label>L*</label><input type="number" id="m-L" inputmode="decimal" step="any"></div>
+        <div><label>a*</label><input type="number" id="m-a" inputmode="decimal" step="any"></div>
+        <div><label>b*</label><input type="number" id="m-b" inputmode="decimal" step="any"></div>
+      </div>
+      <div class="gr g3">
+        <div><label>Load saved master</label><select id="m-load"><option value="">— none —</option></select></div>
+        <div><button type="button" class="badd" id="m-save" style="margin-top:16px;width:100%;justify-content:center">Save as master</button></div>
+        <div><button type="button" class="badd" id="m-delete" style="margin-top:16px;width:100%;justify-content:center;display:none">Delete this master</button></div>
+      </div>
+      <details>
+        <summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:4px 0 8px">More master details (gloss, geometry, batch record)</summary>
+        <div class="gr g4" style="margin-top:8px">
+          <div><label>Gloss</label><input type="number" id="m-gloss" step="any" placeholder="e.g. 1.3"></div>
+          <div><label>Gloss tol. ±</label><input type="number" id="m-glosstol" step="any" placeholder="0.2"></div>
+          <div><label>Geometry</label><select id="m-geometry"><option>45/0</option><option>d/8 (sphere)</option><option>multiangle 15/45/110</option></select></div>
+          <div><label>Illuminant / observer</label><select id="m-illuminant"><option>D65/10</option><option>D65/2</option><option>A/2</option><option>F11/10</option></select></div>
+        </div>
+        <div class="gr g4">
+          <div><label>Instrument / measured by</label><input type="text" id="m-instrument" placeholder="e.g. BYK spectro-guide"></div>
+          <div><label>Date</label><input type="text" id="m-date" placeholder="YYYY-MM-DD"></div>
+          <div><label>DFT</label><input type="text" id="m-dft" placeholder="e.g. 25-28"></div>
+          <div><label>Batch no.</label><input type="text" id="m-batchno" placeholder="optional"></div>
+        </div>
+        <div><label>Note</label><input type="text" id="m-comment" placeholder="optional"></div>
+      </details>
+    </div>
+
+    <div style="text-align:center;margin:-4px 0 8px">
+      <button type="button" class="bswap" id="btn-swap" title="Swap master / sample">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 5h9l-2.5-2.5M14 11H5l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <div class="card card-input">
+      <div class="card-hd"><span class="lbl">Sample</span><span class="bdg bc">measurement</span></div>
+      <div class="gr g4">
+        <div><label>Name</label><input type="text" id="s-name" placeholder="e.g. Batch 001"></div>
+        <div><label>L*</label><input type="number" id="s-L" inputmode="decimal" step="any"></div>
+        <div><label>a*</label><input type="number" id="s-a" inputmode="decimal" step="any"></div>
+        <div><label>b*</label><input type="number" id="s-b" inputmode="decimal" step="any"></div>
+      </div>
+      <details>
+        <summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:4px 0 8px">More sample details (gloss, geometry, batch record)</summary>
+        <div class="gr g4" style="margin-top:8px">
+          <div><label>Gloss</label><input type="number" id="s-gloss" step="any"></div>
+          <div><label>Geometry</label><select id="s-geometry"><option>45/0</option><option>d/8 (sphere)</option><option>multiangle 15/45/110</option></select></div>
+          <div><label>Illuminant / observer</label><select id="s-illuminant"><option>D65/10</option><option>D65/2</option><option>A/2</option><option>F11/10</option></select></div>
+          <div><label>Batch no.</label><input type="text" id="s-batchno" placeholder="optional"></div>
+        </div>
+        <div><label>Note</label><input type="text" id="s-comment" placeholder="e.g. prebatch validation"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- PASTE MODE -->
+  <div id="mode-paste" style="display:none">
+    <div class="card">
+      <label>Paste measurement data</label>
+      <textarea id="paste-text" placeholder="Paste from Excel or a measurement printout — tab, semicolon or space separated, decimal comma or dot both work. One row per sample. Optional header row (L*, a*, b*) and a trailing name column."></textarea>
+      <button type="button" class="badd" id="btn-parse" style="margin-top:9px">Parse</button>
+    </div>
+    <div id="paste-preview"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="card">
+    <div class="gr g3">
+      <div>
+        <label>Formula</label>
+        <select id="formula-select">
+          <option value="ciede2000">CIEDE2000</option>
+          <option value="cie76">CIE76 (ΔE*ab)</option>
+          <option value="cie94">CIE94</option>
+          <option value="cmc">CMC l:c</option>
+        </select>
+      </div>
+      <div id="cmc-ratio-wrap" style="display:none">
+        <label>CMC ratio</label>
+        <select id="cmc-ratio">
+          <option value="2:1">2:1 (acceptability)</option>
+          <option value="1:1">1:1 (perceptibility)</option>
+        </select>
+      </div>
+      <div>
+        <label>ΔE tolerance ( ≤ )</label>
+        <input type="number" id="tolerance" value="1.0" step="0.01" min="0">
+      </div>
+    </div>
+    <div class="gr g2">
+      <div>
+        <label>ΔL* deviation (±)</label>
+        <input type="number" id="dev-l" value="0.3" step="0.01" min="0">
+      </div>
+      <div>
+        <label>Δa*/Δb* deviation (±)</label>
+        <input type="number" id="dev-ab" value="0.3" step="0.01" min="0">
+      </div>
+    </div>
+    <p class="sub" style="margin:6px 0 0;font-size:11px">Typical instrument repeatability — a difference at or below these stays out of the interpretation below. Adjust to match your instrument's spec sheet.</p>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="rwrap" id="results">
+    <div class="rcard">
+      <div class="rl">Main result</div>
+      <div class="rmain">
+        <div class="rv" id="rv-main">—</div>
+        <span class="rformula" id="rv-formula-label">ΔE00</span>
+        <span class="badge" id="badge-pf">—</span>
+      </div>
+      <div class="rtol" id="rtol-note"></div>
+      <div class="formula-row" id="formula-row"></div>
+      <div class="delta-row" id="delta-row-lab"></div>
+      <div class="delta-row" id="delta-row-lch"></div>
+    </div>
+
+    <div class="rcard">
+      <div class="rl">In plain language</div>
+      <div class="interp" id="interp-text"></div>
+      <div class="noise-note" id="noise-note"></div>
+      <div class="nodose" id="nodose-note"></div>
+    </div>
+
+    <div class="plots">
+      <div class="plot-box">
+        <svg id="plot-ab" viewBox="0 0 300 300"></svg>
+        <div class="plot-note" id="plot-ab-note">a*b* plane — orange: where we are · green dashed: correction direction</div>
+      </div>
+      <div class="plot-box">
+        <svg id="plot-l" viewBox="0 0 90 300"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- BATCH RESULTS (paste, multi-row) -->
+  <div class="tbl-wrap" id="batch-wrap" style="display:none">
+    <div class="tbl-hd"><span>Batch — one master, multiple samples</span></div>
+    <table><thead><tr><th>Sample</th><th>ΔE</th><th>Result</th></tr></thead><tbody id="batch-body"></tbody></table>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="hsec">
+    <div class="hhd"><h3>History for this master</h3><button type="button" class="bclr" id="btn-clear-history">Clear</button></div>
+    <div id="history-list"></div>
+    <div class="arow">
+      <button type="button" class="bsave" id="btn-save-history">Save to history</button>
+      <button type="button" class="bprint" id="btn-export-history">Export history (JSON)</button>
+    </div>
+  </div>
+
+  <div class="arow">
+    <button type="button" class="bghost" id="btn-export-library">Export library (JSON)</button>
+    <label class="bghost" style="cursor:pointer;margin:0">Import library
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </label>
+  </div>
+
+  <p class="sub" style="margin-top:2rem;font-size:11.5px">Works offline once loaded. Data stays on this device (localStorage) — export the library/history to move it between a tablet and a PC.</p>
+</div>
+
+<script src="../assets/colorspace.js"></script>
+<script src="../assets/deltae.js"></script>
+<script src="../assets/interpret.js"></script>
+<script src="../assets/plot.js"></script>
+<script src="../assets/store.js"></script>
+<script src="../assets/i18n.js"></script>
+<script>
+(function () {
+  var t = I18n.t;
+
+  var state = {
+    master: { id: null, name: '', L: 0, a: 0, b: 0, gloss: null, glossTol: null, geometry: '45/0', illuminant: 'D65/10', instrument: '', date: '', dft: '', batchNo: '', comment: '' },
+    sample: { name: '', L: 0, a: 0, b: 0, gloss: null, geometry: '45/0', illuminant: 'D65/10', batchNo: '', comment: '' },
+    formula: 'ciede2000',
+    cmcRatio: '2:1',
+    tolerance: 1.0,
+    devL: 0.3,
+    devAB: 0.3,
+    inputMode: 'manual'
+  };
+
+  var els = {};
+  ['m-name','m-L','m-a','m-b','m-gloss','m-glosstol','m-geometry','m-illuminant','m-instrument','m-date','m-dft','m-batchno','m-comment','m-load','m-save','m-delete',
+   's-name','s-L','s-a','s-b','s-gloss','s-geometry','s-illuminant','s-batchno','s-comment',
+   'tab-manual','tab-paste','mode-manual','mode-paste','paste-text','btn-parse','paste-preview','btn-swap',
+   'formula-select','cmc-ratio-wrap','cmc-ratio','tolerance','dev-l','dev-ab',
+   'rv-main','rv-formula-label','badge-pf','rtol-note','formula-row','delta-row-lab','delta-row-lch',
+   'interp-text','noise-note','nodose-note','plot-ab','plot-ab-note','plot-l',
+   'batch-wrap','batch-body','history-list','btn-clear-history','btn-save-history','btn-export-history',
+   'btn-export-library','import-file','geo-warn','geo-warn-text'
+  ].forEach(function (id) { els[id] = document.getElementById(id); });
+
+  function num(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }
+
+  function readForm() {
+    state.master.name = els['m-name'].value;
+    state.master.L = num(els['m-L'].value) || 0;
+    state.master.a = num(els['m-a'].value) || 0;
+    state.master.b = num(els['m-b'].value) || 0;
+    state.master.gloss = num(els['m-gloss'].value);
+    state.master.glossTol = num(els['m-glosstol'].value);
+    state.master.geometry = els['m-geometry'].value;
+    state.master.illuminant = els['m-illuminant'].value;
+    state.master.instrument = els['m-instrument'].value;
+    state.master.date = els['m-date'].value;
+    state.master.dft = els['m-dft'].value;
+    state.master.batchNo = els['m-batchno'].value;
+    state.master.comment = els['m-comment'].value;
+
+    state.sample.name = els['s-name'].value;
+    state.sample.L = num(els['s-L'].value) || 0;
+    state.sample.a = num(els['s-a'].value) || 0;
+    state.sample.b = num(els['s-b'].value) || 0;
+    state.sample.gloss = num(els['s-gloss'].value);
+    state.sample.geometry = els['s-geometry'].value;
+    state.sample.illuminant = els['s-illuminant'].value;
+    state.sample.batchNo = els['s-batchno'].value;
+    state.sample.comment = els['s-comment'].value;
+
+    state.formula = els['formula-select'].value;
+    state.cmcRatio = els['cmc-ratio'].value;
+    state.tolerance = num(els['tolerance'].value) || 0;
+    state.devL = num(els['dev-l'].value) || 0;
+    state.devAB = num(els['dev-ab'].value) || 0;
+  }
+
+  function writeForm() {
+    els['m-name'].value = state.master.name || '';
+    els['m-L'].value = state.master.L;
+    els['m-a'].value = state.master.a;
+    els['m-b'].value = state.master.b;
+    els['m-gloss'].value = state.master.gloss != null ? state.master.gloss : '';
+    els['m-glosstol'].value = state.master.glossTol != null ? state.master.glossTol : '';
+    els['m-geometry'].value = state.master.geometry || '45/0';
+    els['m-illuminant'].value = state.master.illuminant || 'D65/10';
+    els['m-instrument'].value = state.master.instrument || '';
+    els['m-date'].value = state.master.date || '';
+    els['m-dft'].value = state.master.dft || '';
+    els['m-batchno'].value = state.master.batchNo || '';
+    els['m-comment'].value = state.master.comment || '';
+
+    els['s-name'].value = state.sample.name || '';
+    els['s-L'].value = state.sample.L;
+    els['s-a'].value = state.sample.a;
+    els['s-b'].value = state.sample.b;
+    els['s-gloss'].value = state.sample.gloss != null ? state.sample.gloss : '';
+    els['s-geometry'].value = state.sample.geometry || '45/0';
+    els['s-illuminant'].value = state.sample.illuminant || 'D65/10';
+    els['s-batchno'].value = state.sample.batchNo || '';
+    els['s-comment'].value = state.sample.comment || '';
+
+    els['formula-select'].value = state.formula;
+    els['cmc-ratio'].value = state.cmcRatio;
+    els['tolerance'].value = state.tolerance;
+    els['dev-l'].value = state.devL;
+    els['dev-ab'].value = state.devAB;
+
+    refreshMasterSelect();
+    els['m-delete'].style.display = state.master.id ? '' : 'none';
+    els['cmc-ratio-wrap'].style.display = state.formula === 'cmc' ? '' : 'none';
+  }
+
+  function formulaOpts() {
+    if (state.formula === 'cmc') {
+      var parts = state.cmcRatio.split(':');
+      return { l: parseFloat(parts[0]), c: parseFloat(parts[1]) };
+    }
+    return {};
+  }
+
+  function computeAll(master, sample) {
+    return {
+      cie76: DeltaE.cie76(master, sample),
+      cie94: DeltaE.cie94(master, sample),
+      cmc: DeltaE.cmc(master, sample, formulaOpts()),
+      ciede2000: DeltaE.ciede2000(master, sample)
+    };
+  }
+
+  var FORMULA_LABELS = { cie76: 'ΔE*ab (CIE76)', cie94: 'ΔE94', cmc: 'ΔECMC', ciede2000: 'ΔE00 (CIEDE2000)' };
+
+  function render() {
+    readForm();
+    var master = state.master, sample = state.sample;
+    var results = computeAll(master, sample);
+    var mainVal = results[state.formula];
+
+    els['rv-main'].textContent = mainVal.toFixed(2);
+    els['rv-formula-label'].textContent = FORMULA_LABELS[state.formula].split(' ')[0];
+
+    var pass = mainVal <= state.tolerance;
+    els['badge-pf'].textContent = pass ? '✓ ' + t('pass') : '✕ ' + t('fail');
+    els['badge-pf'].className = 'badge ' + (pass ? 'badge-pass' : 'badge-fail');
+    els['rtol-note'].textContent = 'tolerance: ' + FORMULA_LABELS[state.formula].split(' ')[0] + ' ≤ ' + state.tolerance.toFixed(2);
+
+    var order = ['ciede2000', 'cie76', 'cie94', 'cmc'];
+    els['formula-row'].innerHTML = order.map(function (k) {
+      return '<span' + (k === state.formula ? ' style="color:var(--pt);font-weight:600"' : '') + '>' + FORMULA_LABELS[k].split(' ')[0] + ' <b>' + results[k].toFixed(2) + '</b></span>';
+    }).join('');
+
+    var d = DeltaE.basicDeltas(master, sample);
+    function dcell(label, v) {
+      var cls = v >= 0 ? 'pos' : 'neg';
+      var sign = v >= 0 ? '+' : '';
+      return '<div><div class="dl">' + label + '</div><div class="dv ' + cls + '">' + sign + v.toFixed(2) + '</div></div>';
+    }
+    els['delta-row-lab'].innerHTML = dcell('ΔL*', d.dL) + dcell('Δa*', d.da) + dcell('Δb*', d.db);
+    els['delta-row-lch'].innerHTML = dcell('ΔL*', d.dL) + dcell('ΔC*', d.dC) + dcell('ΔH*', d.dH);
+
+    var interp = Interpret.interpret(master, sample, { L: state.devL, ab: state.devAB }, t);
+    els['interp-text'].innerHTML = interp.sentences.map(function (s) { return '<div>' + s + '</div>'; }).join('');
+    els['noise-note'].textContent = 'Deviation: ΔL* ±' + state.devL.toFixed(2) + ' · Δa*/Δb* ±' + state.devAB.toFixed(2);
+    els['nodose-note'].textContent = t('noDosage');
+
+    Plot.renderABPlane(els['plot-ab'], { master: master, sample: sample, formulaKey: state.formula, tolerance: state.tolerance, formulaOpts: formulaOpts(), t: t });
+    Plot.renderLBand(els['plot-l'], { master: master, sample: sample, formulaKey: state.formula, tolerance: state.tolerance, formulaOpts: formulaOpts() });
+
+    checkGeometryWarning();
+    renderHistory();
+    updateUrl();
+  }
+
+  function checkGeometryWarning() {
+    var m = state.master, s = state.sample;
+    var mismatchGeo = m.geometry && s.geometry && m.geometry !== s.geometry;
+    var mismatchIll = m.illuminant && s.illuminant && m.illuminant !== s.illuminant;
+    if (mismatchGeo || mismatchIll) {
+      els['geo-warn-text'].textContent = t('geometryWarning');
+      els['geo-warn'].classList.add('on');
+    } else {
+      els['geo-warn'].classList.remove('on');
+    }
+  }
+
+  // ---- master library ----
+  function refreshMasterSelect() {
+    var masters = Store.getMasters();
+    var sel = els['m-load'];
+    var current = state.master.id || '';
+    sel.innerHTML = '<option value="">— none —</option>' + masters.map(function (m) {
+      return '<option value="' + m.id + '">' + (m.name || 'Untitled') + '</option>';
+    }).join('');
+    sel.value = current;
+  }
+
+  els['m-load'].addEventListener('change', function () {
+    var id = this.value;
+    if (!id) return;
+    var m = Store.findMaster(id);
+    if (!m) return;
+    state.master = Object.assign({}, state.master, m);
+    writeForm();
+    render();
+  });
+
+  els['m-save'].addEventListener('click', function () {
+    readForm();
+    if (!state.master.name) { state.master.name = prompt('Name this master (e.g. product code):') || 'Untitled'; }
+    state.master = Store.saveMaster(state.master);
+    writeForm();
+    els['m-save'].textContent = t('saved') + ' ✓';
+    setTimeout(function () { els['m-save'].textContent = 'Save as master'; }, 1600);
+  });
+
+  els['m-delete'].addEventListener('click', function () {
+    if (!state.master.id) return;
+    if (!confirm('Delete this saved master? History stays but will no longer show a name.')) return;
+    Store.deleteMaster(state.master.id);
+    state.master.id = null;
+    writeForm();
+  });
+
+  // ---- swap ----
+  els['btn-swap'].addEventListener('click', function () {
+    readForm();
+    var m = state.master, s = state.sample;
+    var newMaster = Object.assign({}, m, { name: s.name, L: s.L, a: s.a, b: s.b, gloss: s.gloss, geometry: s.geometry, illuminant: s.illuminant, id: null });
+    var newSample = Object.assign({}, s, { name: m.name, L: m.L, a: m.a, b: m.b, gloss: m.gloss, geometry: m.geometry, illuminant: m.illuminant });
+    state.master = newMaster;
+    state.sample = newSample;
+    writeForm();
+    render();
+  });
+
+  // ---- tabs ----
+  els['tab-manual'].addEventListener('click', function () { setMode('manual'); });
+  els['tab-paste'].addEventListener('click', function () { setMode('paste'); });
+  function setMode(mode) {
+    state.inputMode = mode;
+    els['tab-manual'].classList.toggle('on', mode === 'manual');
+    els['tab-paste'].classList.toggle('on', mode === 'paste');
+    els['mode-manual'].style.display = mode === 'manual' ? '' : 'none';
+    els['mode-paste'].style.display = mode === 'paste' ? '' : 'none';
+  }
+
+  // ---- paste parsing ----
+  function splitLine(line) {
+    if (line.indexOf('\t') !== -1) return line.split('\t').map(function (s) { return s.trim(); }).filter(function (s) { return s !== ''; });
+    if (line.indexOf(';') !== -1) return line.split(';').map(function (s) { return s.trim(); }).filter(function (s) { return s !== ''; });
+    if (/\s/.test(line.trim())) return line.trim().split(/\s+/);
+    return line.split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s !== ''; });
+  }
+
+  function toNumber(tok) {
+    var n = parseFloat(String(tok).replace(',', '.'));
+    return isNaN(n) ? null : n;
+  }
+
+  function parsePasteText(text) {
+    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l !== ''; });
+    if (!lines.length) return [];
+
+    var rows = lines.map(splitLine);
+    var colMap = { L: 0, a: 1, b: 2, name: null };
+
+    var first = rows[0];
+    var looksHeader = first.some(function (tok) { return /^[Ll]\*?$/.test(tok) || /^[Aa]\*?$/.test(tok) || /^[Bb]\*?$/.test(tok); });
+    if (looksHeader) {
+      first.forEach(function (tok, i) {
+        if (/^[Ll]\*?$/.test(tok)) colMap.L = i;
+        else if (/^[Aa]\*?$/.test(tok)) colMap.a = i;
+        else if (/^[Bb]\*?$/.test(tok)) colMap.b = i;
+        else colMap.name = i;
+      });
+      rows = rows.slice(1);
+    }
+
+    var out = [];
+    rows.forEach(function (r) {
+      var L = toNumber(r[colMap.L]), a = toNumber(r[colMap.a]), b = toNumber(r[colMap.b]);
+      if (L === null || a === null || b === null) return;
+      var name = colMap.name != null ? r[colMap.name] : (r.length > 3 ? r[r.length - 1] : '');
+      out.push({ name: name || '', L: L, a: a, b: b });
+    });
+    return out;
+  }
+
+  els['btn-parse'].addEventListener('click', function () {
+    var rows = parsePasteText(els['paste-text'].value);
+    if (!rows.length) {
+      els['paste-preview'].innerHTML = '<div class="emsg on">No numeric L*a*b* rows recognized. Check the separator and try again.</div>';
+      return;
+    }
+    renderPastePreview(rows);
+  });
+
+  function renderPastePreview(rows) {
+    var rowsHtml = rows.map(function (r, i) {
+      return '<tr>' +
+        '<td><input type="text" class="pp-name" data-i="' + i + '" value="' + r.name + '" style="width:110px"></td>' +
+        '<td><input type="number" class="pp-L" data-i="' + i + '" value="' + r.L + '" step="any" style="width:70px"></td>' +
+        '<td><input type="number" class="pp-a" data-i="' + i + '" value="' + r.a + '" step="any" style="width:70px"></td>' +
+        '<td><input type="number" class="pp-b" data-i="' + i + '" value="' + r.b + '" step="any" style="width:70px"></td>' +
+        '</tr>';
+    }).join('');
+
+    els['paste-preview'].innerHTML =
+      '<div class="tbl-wrap"><div class="tbl-hd"><span>' + t('confirmValues') + '</span></div>' +
+      '<table><thead><tr><th>Name</th><th>L*</th><th>a*</th><th>b*</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+      '<button type="button" class="bcalc" id="btn-apply-paste">Use ' + rows.length + ' sample' + (rows.length > 1 ? 's' : '') + '</button>';
+
+    document.getElementById('btn-apply-paste').addEventListener('click', function () {
+      var n = rows.length;
+      var confirmed = [];
+      for (var i = 0; i < n; i++) {
+        confirmed.push({
+          name: document.querySelector('.pp-name[data-i="' + i + '"]').value,
+          L: parseFloat(document.querySelector('.pp-L[data-i="' + i + '"]').value),
+          a: parseFloat(document.querySelector('.pp-a[data-i="' + i + '"]').value),
+          b: parseFloat(document.querySelector('.pp-b[data-i="' + i + '"]').value)
+        });
+      }
+      if (n === 1) {
+        state.sample.name = confirmed[0].name;
+        state.sample.L = confirmed[0].L;
+        state.sample.a = confirmed[0].a;
+        state.sample.b = confirmed[0].b;
+        writeForm();
+        setMode('manual');
+        render();
+      } else {
+        readForm();
+        renderBatch(confirmed);
+      }
+    });
+  }
+
+  function renderBatch(rows) {
+    els['batch-wrap'].style.display = '';
+    els['batch-body'].innerHTML = rows.map(function (r, i) {
+      var val = deltaFor(state.master, r, state.formula);
+      var pass = val <= state.tolerance;
+      return '<tr data-i="' + i + '"><td>' + (r.name || 'Sample ' + (i + 1)) + '</td><td class="mn">' + val.toFixed(2) + '</td>' +
+        '<td><span class="badge ' + (pass ? 'badge-pass' : 'badge-fail') + '">' + (pass ? t('pass') : t('fail')) + '</span></td></tr>';
+    }).join('');
+
+    Array.prototype.forEach.call(els['batch-body'].querySelectorAll('tr'), function (tr) {
+      tr.addEventListener('click', function () {
+        var i = parseInt(tr.getAttribute('data-i'), 10);
+        var r = rows[i];
+        state.sample.name = r.name; state.sample.L = r.L; state.sample.a = r.a; state.sample.b = r.b;
+        writeForm();
+        render();
+        window.scrollTo({ top: document.getElementById('results').offsetTop - 20, behavior: 'smooth' });
+      });
+    });
+  }
+
+  function deltaFor(master, sample, formula) {
+    if (formula === 'cie76') return DeltaE.cie76(master, sample);
+    if (formula === 'cie94') return DeltaE.cie94(master, sample);
+    if (formula === 'cmc') return DeltaE.cmc(master, sample, formulaOpts());
+    return DeltaE.ciede2000(master, sample);
+  }
+
+  // ---- history ----
+  function renderHistory() {
+    if (!state.master.id) {
+      els['history-list'].innerHTML = '<div class="empty-hint">Save this master first to start a history for it.</div>';
+      return;
+    }
+    var entries = Store.getHistory(state.master.id);
+    if (!entries.length) {
+      els['history-list'].innerHTML = '<div class="empty-hint">No saved comparisons yet for this master.</div>';
+      return;
+    }
+    els['history-list'].innerHTML = entries.map(function (h) {
+      return '<div class="hi"><div class="hitp"><span class="hrat" style="color:' + (h.pass ? 'var(--gt)' : 'var(--rt)') + '">' + h.sampleName + ' — ' + FORMULA_LABELS[h.formula].split(' ')[0] + ' ' + h.value.toFixed(2) + '</span>' +
+        '<span class="hmeta">' + new Date(h.timestamp).toLocaleString() + '</span></div>' +
+        '<div class="hdet">L* ' + h.sample.L.toFixed(2) + ' · a* ' + h.sample.a.toFixed(2) + ' · b* ' + h.sample.b.toFixed(2) + (h.sample.batchNo ? ' · batch ' + h.sample.batchNo : '') + (h.sample.comment ? ' · ' + h.sample.comment : '') + '</div></div>';
+    }).join('');
+  }
+
+  els['btn-save-history'].addEventListener('click', function () {
+    readForm();
+    if (!state.master.id) {
+      state.master.name = state.master.name || 'Untitled';
+      state.master = Store.saveMaster(state.master);
+      writeForm();
+    }
+    var val = deltaFor(state.master, state.sample, state.formula);
+    Store.addHistoryEntry({
+      masterId: state.master.id,
+      sampleName: state.sample.name || 'Sample',
+      sample: state.sample,
+      formula: state.formula,
+      value: val,
+      tolerance: state.tolerance,
+      pass: val <= state.tolerance
+    });
+    renderHistory();
+    els['btn-save-history'].textContent = t('saved') + ' ✓';
+    setTimeout(function () { els['btn-save-history'].textContent = t('saveToHistory'); }, 1600);
+  });
+
+  els['btn-clear-history'].addEventListener('click', function () {
+    if (!state.master.id) return;
+    if (!confirm('Clear all history for this master?')) return;
+    Store.clearHistory(state.master.id);
+    renderHistory();
+  });
+
+  els['btn-export-history'].addEventListener('click', function () {
+    downloadFile('color-history.json', Store.exportHistory(state.master.id || undefined));
+  });
+
+  els['btn-export-library'].addEventListener('click', function () {
+    downloadFile('color-master-library.json', Store.exportLibrary());
+  });
+
+  els['import-file'].addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var mode = confirm('OK = merge with existing library. Cancel = replace it entirely.') ? 'merge' : 'replace';
+        var n = Store.importLibrary(reader.result, mode);
+        alert('Imported ' + n + ' master(s).');
+        refreshMasterSelect();
+      } catch (e) {
+        alert('Could not read that file: ' + e.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  function downloadFile(filename, text) {
+    var blob = new Blob([text], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---- URL state ----
+  function updateUrl() {
+    var p = new URLSearchParams();
+    p.set('mL', state.master.L); p.set('ma', state.master.a); p.set('mb', state.master.b);
+    p.set('sL', state.sample.L); p.set('sa', state.sample.a); p.set('sb', state.sample.b);
+    p.set('f', state.formula); p.set('tol', state.tolerance); p.set('devl', state.devL); p.set('devab', state.devAB);
+    if (state.master.name) p.set('mn', state.master.name);
+    if (state.sample.name) p.set('sn', state.sample.name);
+    history.replaceState(null, '', '#' + p.toString());
+  }
+
+  function loadFromUrl() {
+    if (!location.hash || location.hash.length < 2) return false;
+    var p = new URLSearchParams(location.hash.slice(1));
+    if (!p.has('mL')) return false;
+    state.master.L = parseFloat(p.get('mL')); state.master.a = parseFloat(p.get('ma')); state.master.b = parseFloat(p.get('mb'));
+    state.sample.L = parseFloat(p.get('sL')); state.sample.a = parseFloat(p.get('sa')); state.sample.b = parseFloat(p.get('sb'));
+    state.formula = p.get('f') || 'ciede2000';
+    state.tolerance = parseFloat(p.get('tol')) || 1.0;
+    state.devL = parseFloat(p.get('devl')) || 0.3;
+    state.devAB = parseFloat(p.get('devab')) || 0.3;
+    state.master.name = p.get('mn') || '';
+    state.sample.name = p.get('sn') || '';
+    return true;
+  }
+
+  // ---- wire up recompute-on-input ----
+  var allInputs = document.querySelectorAll('#mode-manual input, #mode-manual select, #formula-select, #cmc-ratio, #tolerance, #dev-l, #dev-ab');
+  allInputs.forEach(function (el) {
+    el.addEventListener('input', function () {
+      els['cmc-ratio-wrap'].style.display = els['formula-select'].value === 'cmc' ? '' : 'none';
+      render();
+    });
+    el.addEventListener('change', render);
+  });
+
+  // ---- default example: generic, illustrative values only (no customer/product data) ----
+  function loadDefaultExample() {
+    state.master = { id: null, name: 'Master A', L: 24.89, a: -0.02, b: -0.73, gloss: 1.3, glossTol: 0.2, geometry: '45/0', illuminant: 'D65/10', instrument: '', date: '', dft: '', batchNo: '', comment: '' };
+    state.sample = { name: 'Sample 1', L: 25.29, a: -0.07, b: -0.89, gloss: null, geometry: '45/0', illuminant: 'D65/10', batchNo: '', comment: '' };
+    state.formula = 'ciede2000';
+    state.tolerance = 1.0;
+    state.devL = 0.3;
+    state.devAB = 0.3;
+  }
+
+  if (!loadFromUrl()) loadDefaultExample();
+  writeForm();
+  render();
+})();
+</script>
+</body>
+</html>
