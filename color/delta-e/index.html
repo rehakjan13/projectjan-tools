@@ -41,15 +41,15 @@
     <span id="geo-warn-text"></span>
   </div>
 
-  <div class="modes">
-    <button class="mb on" id="tab-manual" type="button">Manual<span class="ms">Type L*a*b* directly</span></button>
-    <button class="mb" id="tab-paste" type="button">Paste<span class="ms">From Excel or a printout</span></button>
-  </div>
-
-  <!-- MANUAL MODE -->
   <div id="mode-manual">
     <div class="card card-input">
       <div class="card-hd"><span class="lbl">Master</span><span class="bdg ba">reference</span></div>
+      <button type="button" class="badd" id="m-import-toggle" style="margin-bottom:9px">Import data (Excel / printout)</button>
+      <div id="m-import-box" style="display:none;margin-bottom:9px">
+        <textarea id="m-paste-text" placeholder="Paste one master's L*a*b* — tab, semicolon or space separated, decimal comma or dot both work. Optional header row (L*, a*, b*) and a name."></textarea>
+        <button type="button" class="badd" id="m-parse-btn" style="margin-top:9px">Parse</button>
+        <div id="m-paste-preview"></div>
+      </div>
       <div class="gr g4">
         <div><label>Name</label><input type="text" id="m-name" placeholder="e.g. Master A"></div>
         <div><label>L*</label><input type="number" id="m-L" inputmode="decimal" step="any"></div>
@@ -87,6 +87,12 @@
 
     <div class="card card-input">
       <div class="card-hd"><span class="lbl">Sample</span><span class="bdg bc">measurement</span></div>
+      <button type="button" class="badd" id="s-import-toggle" style="margin-bottom:9px">Import data (Excel / printout)</button>
+      <div id="s-import-box" style="display:none;margin-bottom:9px">
+        <textarea id="s-paste-text" placeholder="Paste one or many samples — tab, semicolon or space separated, decimal comma or dot both work. One row per sample. Optional header row (L*, a*, b*) and a trailing name column."></textarea>
+        <button type="button" class="badd" id="s-parse-btn" style="margin-top:9px">Parse</button>
+        <div id="s-paste-preview"></div>
+      </div>
       <div class="gr g4">
         <div><label>Name</label><input type="text" id="s-name" placeholder="e.g. Batch 001"></div>
         <div><label>L*</label><input type="number" id="s-L" inputmode="decimal" step="any"></div>
@@ -104,16 +110,6 @@
         <div><label>Note</label><input type="text" id="s-comment" placeholder="e.g. prebatch validation"></div>
       </details>
     </div>
-  </div>
-
-  <!-- PASTE MODE -->
-  <div id="mode-paste" style="display:none">
-    <div class="card">
-      <label>Paste measurement data</label>
-      <textarea id="paste-text" placeholder="Paste from Excel or a measurement printout — tab, semicolon or space separated, decimal comma or dot both work. One row per sample. Optional header row (L*, a*, b*) and a trailing name column."></textarea>
-      <button type="button" class="badd" id="btn-parse" style="margin-top:9px">Parse</button>
-    </div>
-    <div id="paste-preview"></div>
   </div>
 
   <!-- SETTINGS -->
@@ -229,14 +225,15 @@
     cmcRatio: '2:1',
     tolerance: 1.0,
     devL: 0.3,
-    devAB: 0.3,
-    inputMode: 'manual'
+    devAB: 0.3
   };
 
   var els = {};
   ['m-name','m-L','m-a','m-b','m-gloss','m-glosstol','m-geometry','m-illuminant','m-instrument','m-date','m-dft','m-batchno','m-comment','m-load','m-save','m-delete',
    's-name','s-L','s-a','s-b','s-gloss','s-geometry','s-illuminant','s-batchno','s-comment',
-   'tab-manual','tab-paste','mode-manual','mode-paste','paste-text','btn-parse','paste-preview','btn-swap',
+   'mode-manual','btn-swap',
+   'm-import-toggle','m-import-box','m-paste-text','m-parse-btn','m-paste-preview',
+   's-import-toggle','s-import-box','s-paste-text','s-parse-btn','s-paste-preview',
    'formula-select','cmc-ratio-wrap','cmc-ratio','tolerance','dev-l','dev-ab',
    'rv-main','rv-formula-label','badge-pf','rtol-note','formula-row','delta-row-lab','delta-row-lch',
    'interp-text','noise-note','nodose-note','plot-ab','plot-ab-note','plot-l',
@@ -404,6 +401,7 @@
     if (!m) return;
     state.master = Object.assign({}, state.master, m);
     writeForm();
+    clearExampleGhost();
     render();
   });
 
@@ -433,19 +431,19 @@
     state.master = newMaster;
     state.sample = newSample;
     writeForm();
+    clearExampleGhost();
     render();
   });
 
-  // ---- tabs ----
-  els['tab-manual'].addEventListener('click', function () { setMode('manual'); });
-  els['tab-paste'].addEventListener('click', function () { setMode('paste'); });
-  function setMode(mode) {
-    state.inputMode = mode;
-    els['tab-manual'].classList.toggle('on', mode === 'manual');
-    els['tab-paste'].classList.toggle('on', mode === 'paste');
-    els['mode-manual'].style.display = mode === 'manual' ? '' : 'none';
-    els['mode-paste'].style.display = mode === 'paste' ? '' : 'none';
-  }
+  // ---- inline import (per card) ----
+  els['m-import-toggle'].addEventListener('click', function () {
+    var showing = els['m-import-box'].style.display !== 'none';
+    els['m-import-box'].style.display = showing ? 'none' : '';
+  });
+  els['s-import-toggle'].addEventListener('click', function () {
+    var showing = els['s-import-box'].style.display !== 'none';
+    els['s-import-box'].style.display = showing ? 'none' : '';
+  });
 
   // ---- paste parsing ----
   function splitLine(line) {
@@ -489,16 +487,25 @@
     return out;
   }
 
-  els['btn-parse'].addEventListener('click', function () {
-    var rows = parsePasteText(els['paste-text'].value);
+  els['m-parse-btn'].addEventListener('click', function () {
+    var rows = parsePasteText(els['m-paste-text'].value);
     if (!rows.length) {
-      els['paste-preview'].innerHTML = '<div class="emsg on">No numeric L*a*b* rows recognized. Check the separator and try again.</div>';
+      els['m-paste-preview'].innerHTML = '<div class="emsg on">No numeric L*a*b* row recognized. Check the separator and try again.</div>';
       return;
     }
-    renderPastePreview(rows);
+    renderPastePreview(rows.slice(0, 1), 'master', els['m-paste-preview']);
   });
 
-  function renderPastePreview(rows) {
+  els['s-parse-btn'].addEventListener('click', function () {
+    var rows = parsePasteText(els['s-paste-text'].value);
+    if (!rows.length) {
+      els['s-paste-preview'].innerHTML = '<div class="emsg on">No numeric L*a*b* rows recognized. Check the separator and try again.</div>';
+      return;
+    }
+    renderPastePreview(rows, 'sample', els['s-paste-preview']);
+  });
+
+  function renderPastePreview(rows, target, container) {
     var rowsHtml = rows.map(function (r, i) {
       return '<tr>' +
         '<td><input type="text" class="pp-name" data-i="' + i + '" value="' + r.name + '" style="width:110px"></td>' +
@@ -508,33 +515,49 @@
         '</tr>';
     }).join('');
 
-    els['paste-preview'].innerHTML =
+    var buttonLabel = target === 'master' ? 'Use as master' : ('Use ' + rows.length + ' sample' + (rows.length > 1 ? 's' : ''));
+    container.innerHTML =
       '<div class="tbl-wrap"><div class="tbl-hd"><span>' + t('confirmValues') + '</span></div>' +
       '<table><thead><tr><th>Name</th><th>L*</th><th>a*</th><th>b*</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
-      '<button type="button" class="bcalc" id="btn-apply-paste">Use ' + rows.length + ' sample' + (rows.length > 1 ? 's' : '') + '</button>';
+      '<button type="button" class="bcalc" id="btn-apply-paste">' + buttonLabel + '</button>';
 
-    document.getElementById('btn-apply-paste').addEventListener('click', function () {
+    container.querySelector('#btn-apply-paste').addEventListener('click', function () {
       var n = rows.length;
       var confirmed = [];
       for (var i = 0; i < n; i++) {
         confirmed.push({
-          name: document.querySelector('.pp-name[data-i="' + i + '"]').value,
-          L: parseFloat(document.querySelector('.pp-L[data-i="' + i + '"]').value),
-          a: parseFloat(document.querySelector('.pp-a[data-i="' + i + '"]').value),
-          b: parseFloat(document.querySelector('.pp-b[data-i="' + i + '"]').value)
+          name: container.querySelector('.pp-name[data-i="' + i + '"]').value,
+          L: parseFloat(container.querySelector('.pp-L[data-i="' + i + '"]').value),
+          a: parseFloat(container.querySelector('.pp-a[data-i="' + i + '"]').value),
+          b: parseFloat(container.querySelector('.pp-b[data-i="' + i + '"]').value)
         });
       }
-      if (n === 1) {
+      if (target === 'master') {
+        state.master.name = confirmed[0].name;
+        state.master.L = confirmed[0].L;
+        state.master.a = confirmed[0].a;
+        state.master.b = confirmed[0].b;
+        state.master.id = null;
+        writeForm();
+        clearExampleGhost();
+        els['m-import-box'].style.display = 'none';
+        container.innerHTML = '';
+        render();
+      } else if (n === 1) {
         state.sample.name = confirmed[0].name;
         state.sample.L = confirmed[0].L;
         state.sample.a = confirmed[0].a;
         state.sample.b = confirmed[0].b;
         writeForm();
-        setMode('manual');
+        clearExampleGhost();
+        els['s-import-box'].style.display = 'none';
+        container.innerHTML = '';
         render();
       } else {
         readForm();
         renderBatch(confirmed);
+        els['s-import-box'].style.display = 'none';
+        container.innerHTML = '';
       }
     });
   }
@@ -554,6 +577,7 @@
         var r = rows[i];
         state.sample.name = r.name; state.sample.L = r.L; state.sample.a = r.a; state.sample.b = r.b;
         writeForm();
+        clearExampleGhost();
         render();
         window.scrollTo({ top: document.getElementById('results').offsetTop - 20, behavior: 'smooth' });
       });
@@ -694,9 +718,25 @@
     state.devAB = 0.3;
   }
 
-  if (!loadFromUrl()) loadDefaultExample();
+  // Ghost-style the example values (like the mixing-ratio calculator's placeholder
+  // hints) so it's visually obvious this is a worked example, not entered data —
+  // clears the moment the user actually types into that field.
+  var EXAMPLE_FIELD_IDS = ['m-name', 'm-L', 'm-a', 'm-b', 's-name', 's-L', 's-a', 's-b'];
+  function markExampleGhost() {
+    EXAMPLE_FIELD_IDS.forEach(function (id) { els[id].classList.add('ghost-example'); });
+  }
+  function clearExampleGhost() {
+    EXAMPLE_FIELD_IDS.forEach(function (id) { els[id].classList.remove('ghost-example'); });
+  }
+  EXAMPLE_FIELD_IDS.forEach(function (id) {
+    els[id].addEventListener('input', function () { els[id].classList.remove('ghost-example'); }, { once: true });
+  });
+
+  var usedUrlState = loadFromUrl();
+  if (!usedUrlState) loadDefaultExample();
   writeForm();
   render();
+  if (!usedUrlState) markExampleGhost();
 })();
 </script>
 </body>
