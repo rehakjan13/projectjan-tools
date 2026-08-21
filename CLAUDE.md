@@ -42,7 +42,14 @@ color/
   deltae.test.html   ← static test runner, open directly in a browser, no server needed
   delta-e/index.html ← calculator UI
   index.html         ← landing page
-  training/index.html      ← intro (7 sections in one page, interactive L*a*b* slider + swatch)
+  training/index.html      ← 12-slide narrative carousel, written for someone with zero colour
+                             background: 4 acts (the problem → putting a number on it → the
+                             tools → reading the result). Interactive L*a*b* slider, tolerance-
+                             ellipse comparison, direction plot. Instrument models named on the
+                             "which instrument" slide (BYK-mac i, Konica Minolta CM-26dG, BYK
+                             spectro2guide) are verified real products used as *examples only* —
+                             recheck against vendor sites before changing them, and keep the
+                             "not recommendations" caveat.
   training/quiz/basic/index.html  ← quiz mechanic
   training/data/quiz-basic.json   ← 18-question bank, source of truth — quiz page embeds a copy
                                      inline (fetch() of a local file is blocked outside http/https,
@@ -87,7 +94,7 @@ All UI strings go through `t('key')` from the start, even though v1 ships EN-onl
 | `i18n.js` | ✅ done, EN only — `cs` stubbed empty |
 | Delta E calculator UI (`/color/delta-e/`) | ✅ done — Manual + Paste input, all 4 formulas, tolerance pass/fail, master library w/ metadata + geometry/illuminant mismatch warning, per-master history, export/import JSON, shareable URL state, prefilled with a real historical batch record |
 | Landing page (`/color/`) | ✅ done |
-| Training / intro section | ✅ done — 7 topics as anchored sections on one page (not yet split into separate URLs/SEO pages per original spec) |
+| Training / intro section | ✅ done — 12-slide narrative carousel on one page (not yet split into separate URLs/SEO pages per original spec) |
 | Quiz (basic) | ✅ done — 18-question bank (spec wanted 30+), 10 drawn + shuffled per attempt incl. 2 procedurally generated numeric questions, topic breakdown, retake |
 | Certificate generation | ⬜ not started — deprioritized by user |
 | Glossary + search (`/color/glossary/`, landing quick-search) | ✅ done — `assets/glossary.js`, FAQPage schema injected client-side |

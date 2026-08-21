@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Colorimetry Training — Project Jan</title>
 <link rel="icon" type="image/png" href="/favicon.png">
-<meta name="description" content="A plain-language introduction to colour measurement for coating colorists and QC technicians: CIELAB, illuminants and metamerism, instrument geometry, the four Delta E formulas, and how to read ΔL/ΔC/ΔH.">
+<meta name="description" content="Colour measurement explained from scratch for coating and QC staff — why we stopped judging colour by eye, how a spectrophotometer works, which instrument to use for exterior metallics vs interior parts, and how to read ΔL/ΔC/ΔH.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Colorimetry Training — Project Jan">
-<meta property="og:description" content="Plain-language colorimetry training: Lab, illuminants, instrument geometry, Delta E formulas, reading the difference.">
+<meta property="og:description" content="Colour measurement explained from scratch: from arguing over a panel to reading ΔE with the right instrument.">
 <meta property="og:image" content="https://projectjan.cz/favicon.png">
 <meta property="og:url" content="https://projectjan.cz/color/training/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +19,7 @@
   "@context": "https://schema.org",
   "@type": "Course",
   "name": "Colorimetry Training",
-  "description": "Introduction to colour measurement for coating colorists: CIELAB, illuminants, instrument geometry, Delta E formulas.",
+  "description": "Colour measurement from scratch for coating and QC staff: why visual assessment fails, how spectrophotometers work, choosing an instrument, and reading colour difference.",
   "provider": {"@type": "Organization", "name": "Project Jan", "url": "https://projectjan.cz"}
 }
 </script>
@@ -28,34 +28,74 @@
 <div class="wrap">
   <div class="crumb"><a href="/color/">Colorimetry</a> / Training</div>
   <h1>Colorimetry Training</h1>
-  <p class="sub">7 short slides, swipe or tap through. It's here so the numbers in the <a href="/color/delta-e/">Delta E Calculator</a> mean something. Forgot a term? Check the <a href="/color/glossary/">glossary</a>.</p>
+  <p class="sub">Colour measurement from scratch — no prior knowledge needed. 12 short slides, swipe or tap through. Forgot a term? Check the <a href="/color/glossary/">glossary</a>.</p>
 
   <div class="carousel-dots" id="dots"></div>
 
   <div class="carousel-viewport" id="viewport">
     <div class="carousel-track" id="track">
 
+      <!-- ACT 1 — THE PROBLEM -->
+
+      <div class="carousel-slide">
+        <div class="tsec" id="argument">
+          <span class="act-label">Part 1 · The problem</span>
+          <h3>1. It starts with an argument</h3>
+          <p class="lede">A panel comes off the line. Somebody holds it up next to the master, and two people look at exactly the same thing:</p>
+          <div class="story-scene">
+            <div class="story-line"><span class="who">Operator</span><span class="said">"Looks fine to me. Ship it."</span></div>
+            <div class="story-line"><span class="who">QC</span><span class="said">"No. It's too red."</span></div>
+          </div>
+          <p class="lede">Neither of them is lying. They genuinely see it differently. And there's no way to settle it — you can't hand someone your eyes.</p>
+          <div class="story-punch">Then the batch ships, and the customer has <strong>a third opinion</strong> — the only one that costs money. This is the entire reason colour measurement exists.</div>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="eyes">
+          <span class="act-label">Part 1 · The problem</span>
+          <h3>2. Why your eyes can't settle it</h3>
+          <p class="lede">It's not that anyone is careless. Human colour judgement has four built-in problems:</p>
+          <ul>
+            <li><strong>Vision genuinely varies.</strong> Around 1 in 12 men and 1 in 200 women have some colour vision deficiency — and even "normal" vision differs from person to person.</li>
+            <li><strong>Colour memory is terrible.</strong> Look away for a few seconds and you can't reliably reproduce what you just saw. Side-by-side is the only comparison that works.</li>
+            <li><strong>The light changes everything.</strong> The same panel under the booth, under the shop lights and outside can look like three different colours.</li>
+            <li><strong>Your eye adapts.</strong> Stare at a colour long enough and your vision recalibrates around it. The tenth panel of the shift doesn't look like the first.</li>
+          </ul>
+          <div class="story-punch">Curious where you sit? Try the <a href="/color/vision-test/" style="color:var(--p);font-weight:600">colour vision self-check</a> — it takes a minute and it's a fair illustration of point one.</div>
+        </div>
+      </div>
+
+      <!-- ACT 2 — THE ANSWER -->
+
       <div class="carousel-slide">
         <div class="tsec" id="why-lab">
-          <h3>1. Why Lab exists</h3>
-          <ul>
-            <li>Two people can look at the same panel and disagree how far off it is — measurement gives everyone the same number to argue from.</li>
-            <li>Plain RGB isn't perceptually uniform: the same numeric step can look like a bigger or smaller difference depending on where it sits in the space.</li>
-            <li><strong>CIELAB</strong> (1976) was built so equal numeric distances ≈ equal perceived differences — that's what makes "ΔE = 1.2" mean the same thing across completely different colours.</li>
-          </ul>
+          <span class="act-label">Part 2 · Putting a number on it</span>
+          <h3>3. So we stopped arguing and started measuring</h3>
+          <p class="lede">An instrument doesn't have opinions, doesn't get tired and doesn't care what it saw five minutes ago. Shine a known light at the panel, measure what bounces back, and turn it into numbers. Now the argument has an answer both sides can check.</p>
+          <p class="lede">But <em>which</em> numbers? Not plain RGB — the same numeric step there can look huge in one part of the colour range and invisible in another. <strong>CIELAB</strong> (1976) was built specifically so that equal numeric distance ≈ equal <em>perceived</em> difference:</p>
           <div class="swatch-compare" id="uniformity-demo"></div>
+          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.4rem">Both pairs are the same numeric distance apart. That's the point of a perceptually uniform space.</p>
           <div class="callout">L* = lightness (0 black → 100 white) · a* = red↔green · b* = yellow↔blue.</div>
         </div>
       </div>
 
       <div class="carousel-slide">
         <div class="tsec" id="axes">
-          <h3>2. The axes: L*, a*, b*, C*, h</h3>
+          <span class="act-label">Part 2 · Putting a number on it</span>
+          <h3>4. The map: L*, a*, b*</h3>
+          <p class="lede">Three numbers place any colour in a 3D space. Each axis runs between two opposites:</p>
           <ul>
-            <li><strong>C* (chroma)</strong> = distance from neutral grey = √(a*² + b*²) — how vivid the colour is.</li>
-            <li><strong>h (hue angle)</strong> = atan2(b*, a*), 0°–360° — 0° red-ish, 90° yellow, 180° green, 270° blue.</li>
+            <li><strong>L*</strong> — lightness. <strong>0 = black, 100 = white.</strong> Nothing to do with colour itself, just how light or dark it is.</li>
+            <li><strong>a*</strong> — the <strong>green ↔ red</strong> axis. Negative = greener, positive = redder, 0 = neither.</li>
+            <li><strong>b*</strong> — the <strong>blue ↔ yellow</strong> axis. Negative = bluer, positive = yellower, 0 = neither.</li>
           </ul>
-          <p style="font-size:12.5px;color:var(--muted);margin-bottom:.3rem">Try it — this is the exact plane the calculator draws under every result:</p>
+          <p class="lede">Two more — <strong>C*</strong> and <strong>h</strong> — aren't new information. They're the same point described the way a colorist would say it out loud:</p>
+          <ul>
+            <li><strong>C* (chroma)</strong> = distance from neutral grey = √(a*² + b*²) — how vivid it is. At a* = 0 and b* = 0 you're at pure grey.</li>
+            <li><strong>h (hue angle)</strong> = 0°–360° around the wheel — 0° red-ish, 90° yellow, 180° green, 270° blue.</li>
+          </ul>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:.3rem">Drag the sliders — this is the exact plane the calculator draws under every result:</p>
           <div class="slider-row">
             <label style="min-width:26px;margin:0">L*</label>
             <input type="range" id="demo-L" min="10" max="95" value="55" step="1">
@@ -71,6 +111,7 @@
             <input type="range" id="demo-b" min="-90" max="90" value="-40" step="1">
             <output id="demo-b-out">-40</output>
           </div>
+          <p style="font-size:11px;color:var(--hint);margin-top:-.2rem">L* left = darker, right = lighter · a* left = greener, right = redder · b* left = bluer, right = yellower</p>
           <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:1rem">
             <div id="demo-swatch" style="width:140px;height:140px;border-radius:16px;border:1px solid var(--border);flex-shrink:0"></div>
             <div style="font-size:13.5px;color:var(--muted);line-height:1.7;text-align:center">
@@ -83,31 +124,30 @@
 
       <div class="carousel-slide">
         <div class="tsec" id="illuminants">
-          <h3>3. Illuminants &amp; observer</h3>
+          <span class="act-label">Part 2 · Putting a number on it</span>
+          <h3>5. Light is half the measurement</h3>
+          <p class="lede">Remember problem three — the light changes everything? That doesn't go away just because you bought an instrument. Colour is what happens when <strong>a light source, an object and an eye</strong> meet. Change any one and the answer changes.</p>
           <ul>
-            <li>Colour = light source + object + eye. Change the light, the same panel can measure differently.</li>
-            <li><strong>Illuminant</strong> = standardized light (D65 daylight, A incandescent, F11 fluorescent). <strong>Observer</strong> = 2°/10° field of view behind the colour-matching functions.</li>
-            <li><strong>Metamerism:</strong> two panels match under one light, clash under another — the most common cause of "it matched in the booth, not at the loading dock".</li>
+            <li>So every measurement names its <strong>illuminant</strong> — the standardized light: D65 (daylight), A (incandescent), F11 (fluorescent).</li>
+            <li>…and its <strong>observer</strong> — 2° or 10°, the field of view the standard was built from. Not an instrument angle.</li>
           </ul>
           <div class="illum-row" id="illum-demo">
             <div class="illum-item"><div class="sw" style="background:#8B7BB8"></div><span>D65</span></div>
             <div class="illum-item"><div class="sw" style="background:#A3785F"></div><span>A</span></div>
             <div class="illum-item"><div class="sw" style="background:#7B8AA0"></div><span>F11</span></div>
           </div>
-          <p style="font-size:11px;color:var(--hint);margin-top:-.4rem">Illustrative shift only, not a spectral simulation.</p>
-          <div class="callout">Always record which illuminant/observer a master was measured under — the calculator warns when master and sample don't match.</div>
+          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.4rem">Illustrative shift only, not a spectral simulation.</p>
+          <div class="story-punch"><strong>Metamerism</strong> is when two panels match under one light and clash under another. It's the classic "it matched in the booth, not at the loading dock" complaint — and no amount of tinting fixes it.</div>
         </div>
       </div>
 
+      <!-- ACT 3 — THE TOOLS -->
+
       <div class="carousel-slide">
-        <div class="tsec" id="instrument">
-          <h3>4. The instrument</h3>
-          <ul>
-            <li><strong>45/0</strong> (or 0/45): light at 45°, reads straight on — default for solid colours.</li>
-            <li><strong>Sphere (d/8):</strong> integrates light from every direction — used when gloss shouldn't influence the reading.</li>
-            <li><strong>Multiangle</strong> (15°/45°/110°): required for metallics/pearls — the colour genuinely changes with viewing angle.</li>
-            <li>Always: calibrate on the white standard, and let the panel reach the state you'll judge it in before measuring.</li>
-          </ul>
+        <div class="tsec" id="geometry">
+          <span class="act-label">Part 3 · The tools</span>
+          <h3>6. What's actually inside the box</h3>
+          <p class="lede">Every spectrophotometer does the same three things: shine a light, catch what comes back, do the maths. What separates them is <strong>geometry</strong> — where the light comes from and where the sensor sits.</p>
           <svg class="geo-diagram" viewBox="0 0 220 130">
             <line x1="10" y1="115" x2="210" y2="115" stroke="var(--border)" stroke-width="3"/>
             <line x1="110" y1="115" x2="110" y2="20" stroke="var(--p)" stroke-width="1.5" stroke-dasharray="3 3"/>
@@ -120,52 +160,128 @@
               <marker id="gd-arrow-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--g)"/></marker>
             </defs>
           </svg>
-          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.6rem">45/0 geometry — the common default for solid colours</p>
+          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.6rem">45/0 — light in at 45°, sensor reads straight on</p>
+          <ul>
+            <li><strong>45/0</strong> — the workhorse for flat, solid colours.</li>
+            <li><strong>Sphere (d/8)</strong> — light from every direction at once, so surface texture and gloss stop skewing the colour reading.</li>
+            <li><strong>Multiangle</strong> — several angles in one shot, because some colours genuinely <em>are</em> a different colour depending on where you stand.</li>
+          </ul>
         </div>
       </div>
 
       <div class="carousel-slide">
-        <div class="tsec" id="formulas">
-          <h3>5. Why four Delta E formulas</h3>
+        <div class="tsec" id="instruments">
+          <span class="act-label">Part 3 · The tools</span>
+          <h3>7. Which instrument for which job</h3>
+          <p class="lede">This is where geometry stops being theory. Pick up the wrong instrument and your numbers are meaningless — no matter how carefully you measured.</p>
+          <div class="instr-cards">
+            <div class="instr-card">
+              <div class="job">Exterior · metallic</div>
+              <div class="geo">Multiangle</div>
+              <div class="eg">e.g. BYK-mac i</div>
+              <div class="why">Reads at 15°/25°/45°/75°/110°. Metallics and pearls flip colour with viewing angle — one angle tells you almost nothing. Some models also quantify sparkle and graininess.</div>
+            </div>
+            <div class="instr-card">
+              <div class="job">Interior · textured</div>
+              <div class="geo">Sphere (d/8)</div>
+              <div class="eg">e.g. Konica Minolta CM-26dG</div>
+              <div class="why">Grained plastics, fabrics, soft-touch. The sphere floods light from all sides so texture doesn't distort the reading. Many models measure 60° gloss at the same time.</div>
+            </div>
+            <div class="instr-card">
+              <div class="job">Solid colour · flat</div>
+              <div class="geo">45/0</div>
+              <div class="eg">e.g. BYK spectro2guide</div>
+              <div class="why">Directional, close to how a person actually views a panel. Circumferential illumination keeps it repeatable on directional surfaces. Usually reads gloss too.</div>
+            </div>
+          </div>
+          <p class="instr-note">Named as common examples, not recommendations — in practice your customer's specification usually dictates the geometry, and sometimes the exact model.</p>
+          <div class="story-punch">The number-one cause of colour disputes isn't a bad batch — it's <strong>two people measuring the same panel on different geometries</strong> and comparing the results. The calculator warns you when this happens.</div>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="trust">
+          <span class="act-label">Part 3 · The tools</span>
+          <h3>8. Getting a reading you can trust</h3>
+          <p class="lede">The instrument is honest, but it can only report what you point it at. Four habits separate a number you can defend from one you can't:</p>
           <ul>
-            <li><strong>CIE76:</strong> straight-line distance — oldest, overstates differences in saturated colours.</li>
-            <li><strong>CIE94:</strong> stretches the tolerance based on chroma.</li>
-            <li><strong>CMC l:c:</strong> weights lightness vs. chroma independently (2:1 = acceptability default, 1:1 = stricter).</li>
-            <li><strong>CIEDE2000:</strong> current best practice — also corrects a known hue-rotation issue in blue tones.</li>
+            <li><strong>Calibrate first.</strong> White standard, every session. Calibration drifts — the instrument won't tell you it's wrong.</li>
+            <li><strong>Measure the panel you'll actually judge.</strong> Fully cured, dry film thickness in spec. A wet or under-cured panel isn't the product.</li>
+            <li><strong>Take several readings.</strong> One spot tells you about that spot. Spread them across the panel and average — application varies.</li>
+            <li><strong>Write down how you measured it.</strong> Geometry, illuminant/observer, instrument, date. A master with no metadata is worthless in six months, because nobody knows what it can be compared against.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ACT 4 — READING THE RESULT -->
+
+      <div class="carousel-slide">
+        <div class="tsec" id="formulas">
+          <span class="act-label">Part 4 · Reading the result</span>
+          <h3>9. Four formulas, four different numbers</h3>
+          <p class="lede">You have master and sample as numbers. Now: how far apart are they? That single answer is <strong>ΔE</strong> — and there are four accepted ways to calculate it, each a better approximation of human perception than the last.</p>
+          <ul>
+            <li><strong>CIE76</strong> — straight-line distance. Simple, but overstates differences in saturated colours.</li>
+            <li><strong>CIE94</strong> — stretches the tolerance based on chroma to fix that.</li>
+            <li><strong>CMC l:c</strong> — weights lightness vs. chroma independently (2:1 acceptability, 1:1 stricter).</li>
+            <li><strong>CIEDE2000</strong> — today's best practice, also corrects a hue-rotation problem in blues.</li>
           </ul>
           <div class="mini-ellipses" id="ellipse-demo"></div>
-          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.4rem">Same numeric tolerance, same colour — four different tolerance shapes</p>
-          <div class="callout">Agree the formula + tolerance with your customer upfront — a batch can pass on one and fail on another, and that's not a bug in either number.</div>
+          <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:-.4rem">Same colour, same numeric tolerance — four different "acceptable" zones</p>
+          <div class="story-punch">A batch can pass on one formula and fail on another. That's not a bug — so <strong>agree the formula and the tolerance with your customer before production</strong>, not during the dispute.</div>
         </div>
       </div>
 
       <div class="carousel-slide">
         <div class="tsec" id="reading">
-          <h3>6. Reading the difference</h3>
+          <span class="act-label">Part 4 · Reading the result</span>
+          <h3>10. "It's off" — but which way?</h3>
+          <p class="lede">ΔE tells you <em>how much</em>. It says nothing about <em>which way</em> — and you can't tint a batch with "how much". For that you need the components:</p>
           <ul>
-            <li>ΔE tells you <em>how much</em> — it says nothing about <em>which way</em> to correct.</li>
-            <li>ΔL*/ΔC*/ΔH* (or ΔL*/Δa*/Δb*) give the direction: darker/lighter, more/less saturated, and which hue family the shift leans toward.</li>
-            <li>+b* is yellow — a positive Δb* means the sample went yellower, so the correction direction is toward blue.</li>
+            <li><strong>ΔL*</strong> — positive means lighter, negative means darker.</li>
+            <li><strong>Δa*</strong> — positive toward red, negative toward green.</li>
+            <li><strong>Δb*</strong> — positive toward yellow, negative toward blue.</li>
+            <li><strong>ΔC* / ΔH*</strong> — the same shift described as "more/less saturated" and "hue moved this way" — closer to how you'd actually say it out loud.</li>
           </ul>
           <div class="plot-box" style="max-width:280px;margin:.8rem auto 0">
             <svg id="reading-demo-plot" viewBox="0 0 300 300"></svg>
-            <div class="plot-note">example — try your own numbers in the calculator</div>
+            <div class="plot-note">orange: where the sample landed · green: the way back</div>
           </div>
+          <div class="story-punch">So the answer to the argument in slide 1 isn't "it's too red" — it's <strong>"Δa* is +0.4, it needs to go greener"</strong>. That's something a colorist can act on.</div>
         </div>
       </div>
 
       <div class="carousel-slide">
         <div class="tsec" id="gloss">
-          <h3>7. Gloss &amp; appearance</h3>
-          <ul>
-            <li>Higher gloss → more specular reflection → tends to read <strong>darker and more saturated</strong>, even at identical Lab values.</li>
-            <li>A ΔE of 0.8 can look wrong on the shop floor if the gloss units (GU) drifted enough.</li>
-            <li>A master record should carry a gloss value and tolerance alongside L*a*b* — not just the colour.</li>
-          </ul>
+          <span class="act-label">Part 4 · Reading the result</span>
+          <h3>11. Colour isn't the whole story</h3>
+          <p class="lede">Sometimes every number passes and the part still gets rejected. Usually the culprit is <strong>gloss</strong> — measured in gloss units (GU), typically at 60°.</p>
           <div class="gloss-compare">
             <div><div class="gloss-sw" style="background:#6B6560"></div><div class="gloss-label">matte</div></div>
             <div><div class="gloss-sw glossy" style="background:#3F3B38"></div><div class="gloss-label">glossy</div></div>
           </div>
+          <ul>
+            <li>Higher gloss reflects more light specularly, so it reads <strong>darker and more saturated</strong> — at identical Lab values.</li>
+            <li>Rough guide at 60°: under 10 GU matte · 26–40 satin · 41–69 semi-gloss · 70+ full gloss. Exact cut-offs vary by spec.</li>
+            <li>This is why a master record should carry a gloss value <em>and</em> tolerance next to L*a*b* — not just the colour.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="carousel-slide">
+        <div class="tsec" id="wrap">
+          <span class="act-label">Part 4 · Reading the result</span>
+          <h3>12. Where you've ended up</h3>
+          <p class="lede">You started with two people disagreeing over a panel and no way to settle it. Now you have a chain that anyone can follow and check:</p>
+          <ul>
+            <li>Pick the <strong>right instrument</strong> for the part — multiangle for metallics, sphere for texture, 45/0 for flat solids.</li>
+            <li>Measure it <strong>properly</strong> — calibrated, cured, averaged, documented.</li>
+            <li>Get <strong>L*a*b*</strong> for master and sample, under a stated illuminant and observer.</li>
+            <li>Compare with an <strong>agreed formula and tolerance</strong> → pass or fail, with a number behind it.</li>
+            <li>Read <strong>ΔL*/ΔC*/ΔH*</strong> to know which way to correct.</li>
+          </ul>
+          <div class="story-punch">One thing measurement won't give you: <strong>how much</strong> toner to add. Direction, yes. Dosage depends on your system and colorant strength — that stays a colorist's call.</div>
+          <p class="lede" style="margin-top:.9rem;margin-bottom:0">Next: <a href="quiz/basic/" style="color:var(--p);font-weight:600">test yourself on the basics</a>, try the <a href="/color/vision-test/" style="color:var(--p);font-weight:600">colour vision self-check</a> from Part 1, or go straight to the <a href="/color/delta-e/" style="color:var(--p);font-weight:600">calculator</a>.</p>
         </div>
       </div>
 
@@ -174,7 +290,7 @@
 
   <div class="carousel-nav">
     <button type="button" class="bghost" id="btn-prev">← Back</button>
-    <span class="carousel-count" id="slide-count">1 / 7</span>
+    <span class="carousel-count" id="slide-count">1 / 12</span>
     <button type="button" class="bcalc" id="btn-next" style="width:auto;padding:10px 24px">Next →</button>
   </div>
 
@@ -183,9 +299,13 @@
       <div class="tcard-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14l3-3 2 2 4-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="2.5" y="2.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.4"/></svg></div>
       <div class="tcard-body"><strong>Take the basic quiz</strong><span>10 questions, 70% to pass, retake any time</span></div>
     </a>
+    <a class="tcard" href="/color/vision-test/">
+      <div class="tcard-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1.5 10S4.5 4 10 4s8.5 6 8.5 6-3 6-8.5 6-8.5-6-8.5-6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4"/></svg></div>
+      <div class="tcard-body"><strong>Colour vision self-check</strong><span>The hue-arrangement test from Part 1 — Beginner and Advanced</span></div>
+    </a>
     <a class="tcard" href="/color/delta-e/">
       <div class="tcard-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/></svg></div>
-      <div class="tcard-body"><strong>Back to the calculator</strong><span>Put this to work on a real master/sample pair</span></div>
+      <div class="tcard-body"><strong>Open the calculator</strong><span>Put this to work on a real master/sample pair</span></div>
     </a>
   </div>
 </div>
@@ -202,7 +322,7 @@
   var track = document.getElementById('track');
   var slides = document.querySelectorAll('.carousel-slide');
   var dotsWrap = document.getElementById('dots');
-  var TOPICS = ['why-lab', 'axes', 'illuminants', 'instrument', 'formulas', 'reading', 'gloss'];
+  var TOPICS = ['argument', 'eyes', 'why-lab', 'axes', 'illuminants', 'geometry', 'instruments', 'trust', 'formulas', 'reading', 'gloss', 'wrap'];
   var idx = 0;
 
   TOPICS.forEach(function (topic, i) {
@@ -250,7 +370,7 @@
   var startIdx = TOPICS.indexOf(location.hash.replace('#', ''));
   goTo(startIdx >= 0 ? startIdx : 0);
 
-  // ---- slide 1: perceptual uniformity demo (two pairs, same CIE76 ΔE) ----
+  // ---- slide 3: perceptual uniformity demo (two pairs, same CIE76 ΔE) ----
   (function () {
     var pairs = [
       { name: 'near neutral', m: { L: 55, a: 0, b: 0 }, s: { L: 55, a: 5, b: 0 } },
@@ -267,7 +387,7 @@
     }).join('');
   })();
 
-  // ---- slide 2: interactive Lab slider ----
+  // ---- slide 4: interactive Lab slider ----
   var L = document.getElementById('demo-L'), a = document.getElementById('demo-a'), b = document.getElementById('demo-b');
   var out = { L: document.getElementById('demo-L-out'), a: document.getElementById('demo-a-out'), b: document.getElementById('demo-b-out') };
   var swatch = document.getElementById('demo-swatch');
@@ -288,7 +408,7 @@
   [L, a, b].forEach(function (el) { el.addEventListener('input', updateAxesDemo); });
   updateAxesDemo();
 
-  // ---- slide 5: tolerance-shape comparison across formulas ----
+  // ---- slide 9: tolerance-shape comparison across formulas ----
   (function () {
     var exampleMaster = { L: 50, a: 20, b: -30 };
     var tol = 1.0;
@@ -316,7 +436,7 @@
     }).join('');
   })();
 
-  // ---- slide 6: illustrative direction plot ----
+  // ---- slide 10: illustrative direction plot ----
   Plot.renderABPlane(document.getElementById('reading-demo-plot'), {
     master: { L: 50, a: 5, b: -25 },
     sample: { L: 48.3, a: 5.6, b: -27.8 },
